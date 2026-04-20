@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catalog — Junki Magazine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #fff;
+      font-family: 'Comic Neue', cursive;
+      color: #000;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 2px solid #000;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    header a.back {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      text-decoration: none;
+      border: 2px solid #000;
+      padding: 4px 10px;
+    }
+
+    header a.back:hover { background: #000; color: #fff; }
+
+    header h1 { font-size: 22px; font-weight: 700; }
+
+    /* ── Catalog grid ── */
+    .catalog {
+      max-width: 900px;
+      margin: 48px auto;
+      padding: 0 24px;
+    }
+
+    .catalog h2 {
+      font-size: 28px;
+      margin-bottom: 32px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 32px;
+    }
+
+    /* ── Zine card ── */
+    .card {
+      border: 2px solid #000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-cover {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: #f0f0f0;
+      border-bottom: 2px solid #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-cover .placeholder-text {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .card-body {
+      padding: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-body h3 { font-size: 17px; font-weight: 700; }
+    .card-body p  { font-size: 13px; color: #555; flex: 1; }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-top: 2px solid #000;
+    }
+
+    .card-footer .price { font-size: 16px; font-weight: 700; }
+
+    .card-footer button {
+      background: #000;
+      color: #fff;
+      border: 2px solid #000;
+      font-family: 'Comic Neue', cursive;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .card-footer button:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 40px 16px;
+    }
+
+    .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+
+    .modal {
+      background: #fff;
+      border: 2px solid #000;
+      width: 100%;
+      max-width: 520px;
+      padding: 32px 28px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      font-family: 'Comic Neue', cursive;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .modal h2 { font-size: 22px; margin-bottom: 6px; }
+    .modal p.subtitle { font-size: 14px; color: #444; margin-bottom: 24px; }
+
+    .modal label {
+      display: block;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 5px;
+      margin-top: 16px;
+    }
+
+    .modal input,
+    .modal textarea {
+      width: 100%;
+      border: 2px solid #000;
+      padding: 9px 11px;
+      font-family: 'Comic Neue', cursive;
+      font-size: 14px;
+      background: #fff;
+      outline: none;
+    }
+
+    .modal input:focus,
+    .modal textarea:focus { background: #fffde7; }
+
+    .modal textarea { resize: vertical; min-height: 80px; }
+
+    .modal .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal button[type="submit"] {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 12px;
+      background: #000;
+      color: #fff;
+      font-family: 'Comic Neue', cursive;
+      font-size: 16px;
+      font-weight: 700;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .modal button[type="submit"]:hover:not(:disabled) {
+      background: #fff;
+      color: #000;
+    }
+
+    .modal button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #form-status {
+      margin-top: 16px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      display: none;
+    }
+
+    #form-status.success { background: #e8f5e9; border: 2px solid #000; display: block; }
+    #form-status.error   { background: #ffebee; border: 2px solid #000; display: block; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="back" href="index.html">← Back</a>
+    <h1>Junki Magazine — Catalog</h1>
+  </header>
+
+  <main class="catalog">
+    <h2>Our zines</h2>
+
+    <div class="grid" id="zine-grid">
+      <!-- Cards injected by JS from the ZINES list below -->
+    </div>
+  </main>
+
+  <!-- Order modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+
+      <h2 id="modal-title">Order a copy</h2>
+      <p class="subtitle">We'll email you payment details right away.</p>
+
+      <form id="order-form" novalidate>
+        <label for="f-name">Full name</label>
+        <input id="f-name" name="customer_name" type="text" required placeholder="Your name">
+
+        <label for="f-email">Email</label>
+        <input id="f-email" name="customer_email" type="email" required placeholder="you@example.com">
+
+        <label for="f-address">Delivery address</label>
+        <textarea id="f-address" name="customer_address" required placeholder="Street, city, postcode, country"></textarea>
+
+        <div class="row">
+          <div>
+            <label for="f-issue">Issue</label>
+            <input id="f-issue" name="issue" type="text" required readonly>
+          </div>
+          <div>
+            <label for="f-qty">Quantity</label>
+            <input id="f-qty" name="quantity" type="number" min="1" value="1" required>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn">Place order</button>
+        <div id="form-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // ── Zine catalog ─────────────────────────────────────────────────
+    // Add / remove / edit entries here to update the catalog.
+    // cover: path to an image file, or leave as '' for a placeholder.
+    var ZINES = [
+      { title: 'Issue 1', cover: '', description: 'The first issue.', price: '€5' },
+      { title: 'Issue 2', cover: '', description: 'The second issue.', price: '€5' },
+      { title: 'Issue 3', cover: '', description: 'The third issue.',  price: '€5' },
+    ];
+
+    // ── EmailJS config ────────────────────────────────────────────────
+    var EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+    var EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+    var ORDER_TEMPLATE_ID   = 'YOUR_ORDER_TEMPLATE_ID';
+    var REPLY_TEMPLATE_ID   = 'YOUR_REPLY_TEMPLATE_ID';
+    // ─────────────────────────────────────────────────────────────────
+
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    // Build grid
+    var grid = document.getElementById('zine-grid');
+    ZINES.forEach(function (zine) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<div class="card-cover">' +
+          (zine.cover
+            ? '<img src="' + zine.cover + '" alt="' + zine.title + '">'
+            : '<span class="placeholder-text">Cover coming soon</span>') +
+        '</div>' +
+        '<div class="card-body">' +
+          '<h3>' + zine.title + '</h3>' +
+          '<p>' + zine.description + '</p>' +
+        '</div>' +
+        '<div class="card-footer">' +
+          '<span class="price">' + zine.price + '</span>' +
+          '<button data-issue="' + zine.title + '">Buy</button>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    // Modal open / close
+    var overlay = document.getElementById('modal-overlay');
+
+    grid.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-issue]');
+      if (!btn) return;
+      document.getElementById('f-issue').value = btn.dataset.issue;
+      document.getElementById('f-qty').value = 1;
+      document.getElementById('order-form').reset();
+      document.getElementById('f-issue').value = btn.dataset.issue;
+      document.getElementById('form-status').className = '';
+      document.getElementById('form-status').style.display = 'none';
+      overlay.classList.add('open');
+      document.getElementById('f-name').focus();
+    });
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    function closeModal() { overlay.classList.remove('open'); }
+
+    // Form submit
+    document.getElementById('order-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var form   = e.target;
+      var btn    = document.getElementById('submit-btn');
+      var status = document.getElementById('form-status');
+
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      var params = {
+        customer_name:    form.customer_name.value.trim(),
+        customer_email:   form.customer_email.value.trim(),
+        customer_address: form.customer_address.value.trim(),
+        issue:            form.issue.value.trim(),
+        quantity:         form.quantity.value,
+      };
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      status.className = '';
+      status.style.display = 'none';
+
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, ORDER_TEMPLATE_ID, params);
+        await emailjs.send(EMAILJS_SERVICE_ID, REPLY_TEMPLATE_ID, params);
+        status.className   = 'success';
+        status.textContent = 'Order received! Check your inbox for payment details.';
+        form.reset();
+      } catch (err) {
+        status.className   = 'error';
+        status.textContent = 'Something went wrong. Please try again.';
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Place order';
+      }
+    });
+  </script>
+
+</body>
+</html>
