@@ -118,6 +118,110 @@
     #image-997 a:hover img {
       transform: scale(1.06);
     }
+
+    /* ── Order form ── */
+    .order-section {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      font-family: 'Comic Neue', cursive;
+    }
+
+    .order-section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .order-section p.subtitle {
+      font-size: 15px;
+      margin-bottom: 32px;
+      color: #444;
+    }
+
+    .order-section label {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
+      margin-top: 20px;
+    }
+
+    .order-section input,
+    .order-section textarea,
+    .order-section select {
+      width: 100%;
+      border: 2px solid #000;
+      padding: 10px 12px;
+      font-family: 'Comic Neue', cursive;
+      font-size: 15px;
+      background: #fff;
+      border-radius: 0;
+      appearance: none;
+      outline: none;
+    }
+
+    .order-section input:focus,
+    .order-section textarea:focus,
+    .order-section select:focus {
+      background: #fffde7;
+    }
+
+    .order-section textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .order-section .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .order-section button {
+      display: block;
+      width: 100%;
+      margin-top: 32px;
+      padding: 14px;
+      background: #000;
+      color: #fff;
+      font-family: 'Comic Neue', cursive;
+      font-size: 17px;
+      font-weight: 700;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .order-section button:hover:not(:disabled) {
+      background: #fff;
+      color: #000;
+    }
+
+    .order-section button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #form-status {
+      margin-top: 20px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      display: none;
+    }
+
+    #form-status.success {
+      background: #e8f5e9;
+      border: 2px solid #000;
+      display: block;
+    }
+
+    #form-status.error {
+      background: #ffebee;
+      border: 2px solid #000;
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -162,6 +266,40 @@
     </div>
   </div>
 
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+  <!-- Order form (outside the scaled canvas so it stays readable on mobile) -->
+  <section class="order-section">
+    <h2>Order a copy</h2>
+    <p class="subtitle">Fill in your details and we'll get back to you with payment info.</p>
+
+    <form id="order-form" novalidate>
+      <label for="f-name">Full name</label>
+      <input id="f-name" name="customer_name" type="text" required placeholder="Your name">
+
+      <label for="f-email">Email</label>
+      <input id="f-email" name="customer_email" type="email" required placeholder="you@example.com">
+
+      <label for="f-address">Delivery address</label>
+      <textarea id="f-address" name="customer_address" required placeholder="Street, city, postcode, country"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="f-issue">Which issue</label>
+          <input id="f-issue" name="issue" type="text" required placeholder="e.g. Issue 1">
+        </div>
+        <div>
+          <label for="f-qty">Quantity</label>
+          <input id="f-qty" name="quantity" type="number" min="1" value="1" required>
+        </div>
+      </div>
+
+      <button type="submit" id="submit-btn">Place order</button>
+      <div id="form-status"></div>
+    </form>
+  </section>
+
   <script>
     function scaleToFit() {
       var page = document.querySelector('.page');
@@ -172,6 +310,77 @@
     }
     window.addEventListener('resize', scaleToFit);
     scaleToFit();
+  </script>
+
+  <script>
+    // ── EmailJS config ──────────────────────────────────────────────
+    // 1. Create a free account at https://emailjs.com
+    // 2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
+    // 3. Create TWO email templates (see comments below) → copy their Template IDs
+    // 4. Go to Account → API Keys → copy your Public Key
+    // Then replace the four placeholder strings below.
+
+    var EMAILJS_PUBLIC_KEY   = 'YOUR_PUBLIC_KEY';   // Account > API Keys
+    var EMAILJS_SERVICE_ID   = 'YOUR_SERVICE_ID';   // Email Services
+
+    // Template 1 — order notification sent TO YOU
+    // Suggested subject: "New order from {{customer_name}}"
+    // Body: name, email, address, issue, quantity  (use {{variable_name}} syntax)
+    var ORDER_TEMPLATE_ID    = 'YOUR_ORDER_TEMPLATE_ID';
+
+    // Template 2 — auto-reply sent TO THE CUSTOMER
+    // Suggested subject: "Thanks for your order — payment details inside"
+    // Body: greet by {{customer_name}}, list their order, then paste your bank details
+    // Set "To Email" field in the template to {{customer_email}}
+    var REPLY_TEMPLATE_ID    = 'YOUR_REPLY_TEMPLATE_ID';
+    // ────────────────────────────────────────────────────────────────
+
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    document.getElementById('order-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var form   = e.target;
+      var btn    = document.getElementById('submit-btn');
+      var status = document.getElementById('form-status');
+
+      // Basic validation
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      var params = {
+        customer_name:    form.customer_name.value.trim(),
+        customer_email:   form.customer_email.value.trim(),
+        customer_address: form.customer_address.value.trim(),
+        issue:            form.issue.value.trim(),
+        quantity:         form.quantity.value,
+      };
+
+      btn.disabled    = true;
+      btn.textContent = 'Sending…';
+      status.className = '';
+      status.style.display = 'none';
+
+      try {
+        // Notify the collective
+        await emailjs.send(EMAILJS_SERVICE_ID, ORDER_TEMPLATE_ID, params);
+        // Auto-reply to the customer
+        await emailjs.send(EMAILJS_SERVICE_ID, REPLY_TEMPLATE_ID, params);
+
+        status.className     = 'success';
+        status.textContent   = 'Order received! Check your inbox — we\'ve sent you payment details.';
+        form.reset();
+      } catch (err) {
+        status.className   = 'error';
+        status.textContent = 'Something went wrong. Please try again or email us directly.';
+        console.error(err);
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Place order';
+      }
+    });
   </script>
 </body>
 </html>
