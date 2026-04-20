@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>junkimagazine.com</title>
+  <meta name="description" content="">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #fff;
+      font-family: 'Comic Neue', cursive;
+    }
+
+    /* Wrapper shrinks to viewport on small screens */
+    .page-wrapper {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    /* Fixed 600px canvas — scaled down on mobile via JS */
+    .page {
+      position: relative;
+      width: 600px;
+      height: 1440px;
+      transform-origin: top left;
+    }
+
+    .block {
+      position: absolute;
+    }
+
+    .block img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Background texture */
+    #image-993 {
+      width: 1369px; height: 912px;
+      left: 249px;   top: 457px;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    /* Logo */
+    #image-995 {
+      width: 459px; height: 237px;
+      left: 230px;  top: 135px;
+      z-index: 35;
+      overflow: hidden;
+    }
+
+    /* Animated gif (tilted) */
+    #image-996 {
+      width: 244px; height: 214px;
+      left: 487px;  top: 173px;
+      z-index: 40;
+      overflow: hidden;
+      transform: rotate(-11.4deg);
+    }
+
+    /* Tagline */
+    #text-about {
+      left: 64px; top: 206px;
+      z-index: 30;
+      font-size: 38px; /* 0.064 × 600 */
+      line-height: 1.25;
+      text-align: center;
+      color: #000;
+      white-space: nowrap;
+    }
+
+    /* Main content image */
+    #image-994 {
+      width: 934px; height: 794px;
+      left: 135px;  top: 640px;
+      z-index: 45;
+      overflow: hidden;
+    }
+
+    /* Left decorative panel (no link) */
+    #image-998 {
+      width: 345px; height: 494px;
+      left: -200px; top: 725px;
+      z-index: 55;
+      overflow: hidden;
+    }
+
+    /* Right panel — linked with grow-on-hover */
+    #image-997 {
+      width: 345px; height: 494px;
+      left: 240px;  top: 725px;
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    #image-997 a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      pointer-events: all;
+    }
+
+    #image-997 a img {
+      transition: transform 0.25s ease;
+      pointer-events: none;
+    }
+
+    #image-997 a:hover img {
+      transform: scale(1.06);
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="page">
+
+      <!-- Background texture -->
+      <div id="image-993" class="block">
+        <img src="https://asset.mmm.page/86/44579b2c1746ff887cbda9476d60cc/1eyovfk.png" alt="">
+      </div>
+
+      <!-- Logo -->
+      <div id="image-995" class="block">
+        <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
+      </div>
+
+      <!-- Rotating gif -->
+      <div id="image-996" class="block">
+        <img src="https://asset.mmm.page/d6/916509f49e460298883b873e4bdb88/879m6.gif" alt="">
+      </div>
+
+      <!-- Tagline -->
+      <div id="text-about" class="block">Something about yourself</div>
+
+      <!-- Main content -->
+      <div id="image-994" class="block">
+        <img src="https://asset.mmm.page/65/ec1e3e430a4bf3a4ab45a4dffd385f/tee5fy.png" alt="">
+      </div>
+
+      <!-- Left decorative panel -->
+      <div id="image-998" class="block">
+        <img src="https://asset.mmm.page/20/98e07c8d1248159fac37bbadf5d845/jh8s8o.png" alt="">
+      </div>
+
+      <!-- Right panel (linked) -->
+      <div id="image-997" class="block">
+        <a href="https://junkimagazine.com/junkimagazine" target="_self">
+          <img src="https://asset.mmm.page/20/98e07c8d1248159fac37bbadf5d845/jh8s8o.png" alt="">
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function scaleToFit() {
+      var page = document.querySelector('.page');
+      var wrapper = document.querySelector('.page-wrapper');
+      var scale = Math.min(1, window.innerWidth / 600);
+      page.style.transform = 'scale(' + scale + ')';
+      wrapper.style.height = (page.offsetHeight * scale) + 'px';
+    }
+    window.addEventListener('resize', scaleToFit);
+    scaleToFit();
+  </script>
+</body>
+</html>
