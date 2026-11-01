@@ -90,7 +90,8 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
 
     titleEl.dataset.text = zine.title;
     $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(zine.price || '')}`;
-    $('intro-text').dataset.src = esc(zine.intro || zine.description || '');
+    $('hero-desc').dataset.src = esc(zine.intro || zine.description || '');
+    $('hero-order').textContent = zine.price ? `Order a copy · ${zine.price}` : 'Order a copy';
 
     const cols = [
       ['Contributors', `<div class="zmeta__value">${(zine.contributors || ['—']).map(esc).join('<br>')}</div>`],
@@ -105,7 +106,12 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     slider.setZine(zine);
   }
 
-  $('order-btn').addEventListener('click', () => current && window.JunkiOrder?.open(current.title));
+  for (const id of ['order-btn', 'hero-order']) $(id).addEventListener('click', () => current && window.JunkiOrder?.open(current.slug));
+  // scroll hint: glide down to the details
+  $('scroll-hint').addEventListener('click', () => {
+    const y = $('zmeta').getBoundingClientRect().top + scroll() + innerHeight * 0.1;
+    if (lenis) lenis.scrollTo(y, { duration: 1.4 }); else window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+  });
 
   // ── Photo slider ───────────────────────────────────────────────────
   const slider = (() => {
@@ -289,6 +295,7 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     document.documentElement.classList.remove('is-detail');
     root.setAttribute('aria-hidden', 'true');
     root.querySelectorAll('[data-reveal], [data-reveal-self]').forEach(el => { el.classList.remove('is-revealed'); revealIO.unobserve(el); });
+    root.classList.remove('is-scrolled'); root.style.setProperty('--lead-o', '1');
     showPill(null);
     logo.style.setProperty('--logo-s', '1');
   }
@@ -300,6 +307,9 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     const range = CONFIG.scrollRange * innerHeight;
     titleEl.style.setProperty('--title-y', (Math.min(Math.max(sy, 0), range) * CONFIG.titleCounter).toFixed(1) + 'px');
     logo.style.setProperty('--logo-s', lerp(1, 0.66, clamp(sy / 150, 0, 1)).toFixed(3));
+    // the description and button fade as the zine rises over them; the hint goes once you scroll
+    root.style.setProperty('--lead-o', (1 - clamp((sy - range * 0.35) / (range * 0.5), 0, 1)).toFixed(3));
+    root.classList.toggle('is-scrolled', sy > 30);
     slider.tick(now);
   }
 

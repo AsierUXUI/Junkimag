@@ -269,7 +269,7 @@
     @keyframes detail-in { from { opacity: 0; } }
     .zhero__stage { position: relative; height: 100vh; height: 100svh; }
     .zhero__title {
-      position: absolute; left: 50%; top: 43%; width: 95vw; z-index: 1;
+      position: absolute; left: 50%; top: 31%; width: 95vw; z-index: 1;
       transform: translate(-50%, calc(-50% + var(--title-y, 0px)));
       font-family: var(--display); font-weight: 800; font-size: 12.46vw; line-height: 0.9; letter-spacing: -0.04em;
       text-transform: uppercase; text-align: center; color: var(--pink); text-wrap: balance;
@@ -282,16 +282,39 @@
     .zhero__meta-left { grid-column: 2 / span 3; text-decoration: none; }
     .zhero__meta-left:hover .rvl-unit { text-decoration: underline; text-underline-offset: .12em; text-decoration-thickness: 2px; }
     .zhero__meta-right { grid-column: 8 / span 4; text-align: right; }
-    /* ── Intro ── */
-    .intro { padding: 330px 0 120px; position: relative; z-index: 3; }
-    .intro__inner { width: calc(10 / 12 * 100%); margin: 0 auto; text-align: center; }
-    .rhombus { display: block; width: 13px; height: 13px; margin: 0 auto; background: var(--ink); transform: rotate(45deg) scale(0); transition: transform .6s cubic-bezier(0.34, 1.9, 0.64, 1); }
-    .is-revealed > .rhombus, .rhombus.is-revealed { transform: rotate(45deg) scale(1); }
-    .reduced .rhombus { transform: rotate(45deg); }
-    .intro__text { font-size: 2.38vw; line-height: 1.3; letter-spacing: -0.035em; margin: 60px 0; }
+    /* description + order button under the title; they sit in front of the zine as it rises */
+    .zhero__lead {
+      position: absolute; left: 50%; top: calc(31% + 6.6vw); z-index: 3; width: min(560px, 88vw);
+      transform: translateX(-50%); text-align: center; opacity: var(--lead-o, 1);
+    }
+    .zhero__desc { font-size: clamp(16px, 1.45vw, 22px); line-height: 1.35; letter-spacing: -0.03em; margin-bottom: 22px; }
+    .zhero__cta { opacity: 0; transform: translateY(12px); transition: opacity .7s var(--ease-out) .45s, transform .7s var(--ease-out) .45s, background .3s var(--ease-io), color .3s var(--ease-io); }
+    .zhero__cta.is-revealed { opacity: 1; transform: none; }
+    .reduced .zhero__cta { opacity: 1; transform: none; }
+    /* scroll hint: a small pill at the bottom, gone once you scroll */
+    .scroll-hint {
+      position: absolute; left: 50%; bottom: 22px; z-index: 3; transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 10px; cursor: pointer; white-space: nowrap;
+      font-family: var(--label); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink);
+      background: var(--paper); border: 1px solid var(--ink); border-radius: 500px; padding: 9px 14px;
+      transition: opacity .4s var(--ease-io), transform .4s var(--ease-io);
+      animation: hint-in .8s var(--ease-out) 1.1s both;
+    }
+    @keyframes hint-in { from { opacity: 0; transform: translate(-50%, 10px); } }
+    .scroll-hint__arrow { width: 1px; height: 14px; background: var(--ink); position: relative; animation: hint-bob 1.6s var(--ease-io) infinite; }
+    .scroll-hint__arrow::after {
+      content: ''; position: absolute; left: -3px; bottom: 0; width: 6px; height: 6px;
+      border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); transform: rotate(45deg);
+    }
+    @keyframes hint-bob { 50% { transform: translateY(3px); } }
+    .scroll-hint:hover { background: var(--ink); color: var(--paper); }
+    .scroll-hint:hover .scroll-hint__arrow, .scroll-hint:hover .scroll-hint__arrow::after { background: var(--paper); border-color: var(--paper); }
+    .scroll-hint:hover .scroll-hint__arrow::after { background: none; }
+    .is-scrolled .scroll-hint { opacity: 0; transform: translate(-50%, 10px); pointer-events: none; }
+    .reduced .scroll-hint, .reduced .scroll-hint__arrow { animation: none; }
 
     /* ── Meta table ── */
-    .zmeta { position: relative; z-index: 3; padding-bottom: 120px; }
+    .zmeta { position: relative; z-index: 3; padding: 380px 0 140px; }
     .zmeta__table {
       position: relative; width: calc(8 / 12 * 100%); margin: 0 auto;
       display: grid; grid-template-columns: 477fr 238fr 133fr;
@@ -384,13 +407,14 @@
     /* ── Phones ── */
     @media (max-width: 767px) {
       :root { --gutter: 16px; }
-      .zhero__title { font-size: 16vw; top: 46%; }
+      .zhero__title { font-size: 16vw; top: 30%; }
+      .zhero__lead { top: calc(30% + 10vw); }
+      .zhero__desc { font-size: 16px; margin-bottom: 16px; }
+      .zmeta { padding-top: 75vw; }
+      .scroll-hint { bottom: 72px; }
       .zhero__meta { top: 92px; font-size: 18px; grid-template-columns: 1fr 1fr; padding: 0 var(--gutter); }
       .zhero__meta-left { grid-column: 1; }
       .zhero__meta-right { grid-column: 2; }
-      .intro { padding: 70vw 0 80px; }
-      .intro__inner { width: auto; padding: 0 var(--gutter); }
-      .intro__text { font-size: 22px; margin: 40px 0; }
       .zmeta__table { width: auto; margin: 0 var(--gutter); grid-template-columns: 1fr; }
       .zmeta__col { padding: 20px 0; }
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
@@ -457,18 +481,18 @@
     <section class="zhero" aria-labelledby="zine-title">
       <div class="zhero__stage" id="stage">
         <h1 class="zhero__title" id="zine-title" data-reveal="chars"></h1>
+        <div class="zhero__lead">
+          <p class="zhero__desc" id="hero-desc" data-reveal="lines" data-delay="250"></p>
+          <button class="btn zhero__cta" type="button" id="hero-order" data-reveal-self>Order a copy</button>
+        </div>
         <div class="zhero__meta">
           <a class="zhero__meta-left" href="index.html" data-home data-reveal="lines" data-delay="180" id="hero-left">All<br>zines</a>
           <p class="zhero__meta-right" data-reveal="lines" data-delay="260" id="hero-right"></p>
         </div>
-      </div>
-    </section>
-
-    <section class="intro" aria-label="About this issue">
-      <div class="intro__inner">
-        <span class="rhombus" data-reveal-self></span>
-        <p class="intro__text" id="intro-text" data-reveal="lines"></p>
-        <span class="rhombus" data-reveal-self></span>
+        <button class="scroll-hint" type="button" id="scroll-hint">
+          <span>Scroll to look inside</span>
+          <span class="scroll-hint__arrow" aria-hidden="true"></span>
+        </button>
       </div>
     </section>
 
