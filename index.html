@@ -110,6 +110,12 @@
       position: absolute; left: 50%; top: 52%; width: 77vw; height: auto;
       transform: translate(-50%, var(--shape-y, 0px)) scale(0.96); transform-origin: 50% 0;
     }
+    /* solid blue from the bottom of the hill shape down to the bottom of the screen */
+    .shape-layer__fill {
+      position: absolute; left: 50%; bottom: 0; background: #0078BF;
+      width: calc(77vw * 0.96); top: calc(52% + 77vw * 440 / 1030 * 0.96 - 2px);
+      transform: translate(-50%, var(--shape-y, 0px));
+    }
     .shape-layer__badge {
       position: absolute; left: 50%; top: calc(52% - 6vw); width: 90vw; height: 90vw;
       margin-left: -45vw;
@@ -191,6 +197,14 @@
     }
     .notes .meta__row:last-child { padding-bottom: 0; }
 
+    /* phones only: opens the zine in front */
+    .see-more {
+      display: none; position: absolute; left: 16px; right: 16px; bottom: 16px;
+      align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+      font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--paper); background: var(--ink); border: 1px solid var(--ink); border-radius: 500px; padding: 15px 18px;
+    }
+    .see-more::before { content: ''; width: 7px; height: 7px; background: var(--pink); transform: rotate(45deg); }
     .social {
       position: absolute; left: 14px; bottom: 14px; text-decoration: none;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
@@ -260,11 +274,17 @@
       .nav { gap: 14px; top: 10px; }
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
-      .notes { left: 16px; right: 16px; top: auto; bottom: 56px; width: auto; background: none; padding: 0; margin: 0; }
+      .notes {
+        left: 8px; right: 8px; top: auto; bottom: 76px; width: auto; margin: 0;
+        background: var(--paper); padding: 0 8px 6px;
+      }
       .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
+      html:not(.is-detail) .order-cta { display: none; }   /* home screen: "See more" instead */
       .prompt { display: none; }
-      .social { left: 16px; bottom: 22px; }
+      .social { display: none; }
+      .see-more { display: flex; }
       .shape-layer__shape { width: 150vw; top: 62%; }
+      .shape-layer__fill { width: calc(150vw * 0.96); top: calc(62% + 150vw * 440 / 1030 * 0.96 - 2px); }
       .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
     }
 
@@ -523,6 +543,7 @@
     <h1 class="sr-only">Junki Magazine</h1>
 
     <div class="shape-layer" aria-hidden="true">
+      <div class="shape-layer__fill"></div>
       <svg class="shape-layer__shape" id="shape" viewBox="0 0 1030 440" preserveAspectRatio="xMidYMin meet">
         <path fill="#0078BF" d="M70 150 Q80 110 120 100 L380 52 Q515 22 650 52 L910 100 Q950 110 960 150 L1010 330 Q1030 400 1030 440 L0 440 Q0 400 20 330 Z"/>
       </svg>
@@ -545,6 +566,7 @@
     <div class="notes swap" id="notes"></div>
     <p class="prompt">Scroll, drag or use ← → to browse</p>
     <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
+    <button class="see-more" id="see-more" type="button">See more</button>
   </div>
 
   <!-- Zine detail view (index.html?zine=<slug>). Filled in by detail.js. -->
