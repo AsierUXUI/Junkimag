@@ -1,6 +1,6 @@
 // Junki home page and zine pages, as one page.
 // Home: a diagonal row of 3D zines. Scroll steps one zine at a time, drag
-// flips a zine to its back cover, a hand-drawn scribble circles the zine in front.
+// flips a zine to its back cover, printer's crop marks frame the zine in front.
 // Clicking the zine in front opens its detail view (index.html?zine=<slug>):
 // the same 3D zine moves out of the row into the detail hero, so there is no
 // page load in between. The detail content lives in detail.js.
@@ -12,6 +12,7 @@ import { makeCover, waitForFonts } from './covers.js';
 import { createZineKit } from './zine-mesh.js';
 import { createWheelStepper } from './wheel-steps.js';
 import { createDetailView } from './detail.js';
+import { createTrail } from './trail.js';
 
 // Every tunable value lives here. Add ?debug to the URL for a live panel.
 const CONFIG = {
@@ -50,10 +51,8 @@ const CONFIG = {
   detailScrollRange: 0.45, detailRise: 0.24, detailTilt: 20,
   detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75,
   detailExposure: 1.0, detailKeyIntensity: 1.3,
-  // scribble
-  scribbleEnabled: 1, scribbleFps: 10, scribblePoints: 24, scribbleJitter: 0.028, scribbleLoops: 2,
-  scribbleLoopGap: 0.045, scribblePadding: 0.06, scribbleWidth: 0.012, scribbleSweep: 0.68,
-  scribbleSweepJitter: 0.4, scribbleDrawTime: 0.5,
+  // crop marks around the zine in front (px)
+  marksEnabled: 1, marksGap: 10, marksLength: 22, marksDrawTime: 0.4,
   // back layer
   badgePerItem: 14, shapeSway: 0.8,
 };
@@ -85,6 +84,9 @@ const detailUrl = z => '?zine=' + encodeURIComponent(z.slug);
 const slugFromUrl = () => new URLSearchParams(location.search).get('zine');
 const indexOfSlug = slug => ZINES.findIndex(z => z.slug === slug);
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+// riso ink-dot mouse trail, in the inks of the zine in front / the open zine
+const trail = createTrail();
 
 // ── Renderer ─────────────────────────────────────────────────────────
 let renderer;
@@ -186,7 +188,7 @@ function init() {
     if (t === target) return;
     target = t;
     if (reduce) { x = t; v = 0; }
-    startScribble(t);
+    startMarks(t);
     dirty = true;
     if (fromUser) hero.focus({ preventScroll: true });
   }
@@ -223,6 +225,7 @@ function init() {
     dt = Math.min(dt, MAX_DT);
     clock += dt;
     detail.tick(now);
+    trail.setInks(ZINES[mode === 'detail' ? detailIndex : target]?.inks);
 
     // the row steps back while a zine is open, and comes back after
     const awayTarget = mode === 'detail' ? 1 : 0;
@@ -369,9 +372,9 @@ function init() {
       gallery.updateMatrixWorld(true);
       renderer.render(scene, camera);
       dirty = false;
-      scribbleDirty = true;
+      marksDirty = true;
     }
-    drawScribble(motion > 1e-5);
+    drawMarks(motion > 1e-5);
     maybeSwapMeta();
   }
   const pillPos = { x: -100, y: -100 };
@@ -433,116 +436,115 @@ function init() {
     if (t >= 1 && o.kind !== 'detail') {
       it.override = null;
       it.inner.matrixAutoUpdate = true;
-      if (o.kind === 'return' && mode === 'home') startScribble(target, true);
+      if (o.kind === 'return' && mode === 'home') startMarks(target, true);
     }
   }
   function currentWorld(it) { it.inner.updateMatrixWorld(true); return it.inner.matrixWorld.clone(); }
 
 
-  // ── Scribble ───────────────────────────────────────────────────────
+  // ── Crop marks ─────────────────────────────────────────────────────
+  // Printer's crop marks snap onto the corners of the zine in front, with a
+  // registration target, the issue number and its two ink swatches, like a
+  // print proof. They follow the zine and redraw on every change.
   const sctx = scribbleCanvas.getContext('2d');
-  let scribble = null, oldScribble = null, scribbleDirty = true, lastJitterTick = -1;
+  let marks = null, oldMarks = null, marksDirty = true;
 
-  function startScribble(index, force = false) {
-    if (!CONFIG.scribbleEnabled) return;
-    if (scribble && scribble.index === index && !force) return;
-    oldScribble = scribble;
-    const r = Math.random;
-    scribble = {
-      index, start: clock,
-      a: r() * CONFIG.scribbleSweepJitter,
-      len: CONFIG.scribbleSweep + (r() - 0.5) * CONFIG.scribbleSweepJitter * 0.25,
-      seed: Math.floor(r() * 1e6), phase: r() * Math.PI * 2,
-    };
-    scribbleDirty = true;
+  function startMarks(index, force = false) {
+    if (!CONFIG.marksEnabled) return;
+    if (marks && marks.index === index && !force) return;
+    oldMarks = marks ? { ...marks, fadeStart: clock } : null;
+    marks = { index, start: clock };
+    marksDirty = true;
   }
 
-  function seeded(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
   const tmpV = new THREE.Vector3();
-
-  function scribblePoints(s, item, tick) {
-    const P = CONFIG.scribblePoints, L = CONFIG.scribbleLoops;
-    const pts = [];
-    const total = P * L;
+  function screenCorners(item) {
     const w = scribbleCanvas.width, h = scribbleCanvas.height;
-    const jit = reduce ? 0 : CONFIG.scribbleJitter;
-    for (let k = 0; k <= total; k++) {
-      const t = k / P * Math.PI * 2 + s.phase;
-      const loopPad = CONFIG.scribblePadding + CONFIG.scribbleLoopGap * (k / P);
-      const a = ZW / 2 + loopPad, b = ZH / 2 + loopPad;
-      const c = Math.cos(t), sn = Math.sin(t);
-      const ex = 0.5; // superellipse n = 4
-      let lx = a * Math.sign(c) * Math.pow(Math.abs(c), ex);
-      let ly = b * Math.sign(sn) * Math.pow(Math.abs(sn), ex);
-      lx += (seeded(s.seed + k * 3.1 + tick * 17.7) * 2 - 1) * jit;
-      ly += (seeded(s.seed + k * 5.7 + tick * 11.3) * 2 - 1) * jit;
-      tmpV.set(lx, ly, ZT / 2 + 0.002);
+    return [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([sx, sy]) => {
+      tmpV.set(sx * ZW / 2, sy * ZH / 2, ZT / 2);
       item.mesh.localToWorld(tmpV);
       tmpV.project(camera);
-      pts.push([(tmpV.x * 0.5 + 0.5) * w, (-tmpV.y * 0.5 + 0.5) * h]);
-    }
-    return pts;
+      return [(tmpV.x * 0.5 + 0.5) * w, (-tmpV.y * 0.5 + 0.5) * h];
+    });
   }
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const unit = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+  const along = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k];
 
-  function catmull(pts, sub = 6) {
-    const out = [];
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-      for (let j = 0; j < sub; j++) {
-        const t = j / sub, t2 = t * t, t3 = t2 * t;
-        out.push([
-          0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
-          0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
-        ]);
+  function strokeMarks(m, progress, alpha) {
+    const item = items[m.index];
+    if (!item || !item.group.visible || alpha <= 0) return;
+    const dpr = scribbleCanvas.width / Math.max(1, hero.clientWidth);
+    const [TL, TR, BR, BL] = screenCorners(item);
+    const gap = (CONFIG.marksGap + (1 - progress) * 16) * dpr;   // snaps inward as it appears
+    const len = CONFIG.marksLength * dpr * progress;
+    sctx.save();
+    sctx.globalAlpha = alpha * Math.min(1, progress * 2);
+    sctx.strokeStyle = '#111'; sctx.fillStyle = '#111';
+    sctx.lineWidth = 1.15 * dpr; sctx.lineCap = 'butt';
+    sctx.beginPath();
+    // each corner: one mark on the extension of each edge, not touching the zine
+    for (const [c, nh, nv] of [[TL, TR, BL], [TR, TL, BR], [BR, BL, TR], [BL, BR, TL]]) {
+      for (const n of [nh, nv]) {
+        const d = unit(sub(c, n));
+        const p0 = along(c, d, gap), p1 = along(c, d, gap + len);
+        sctx.moveTo(p0[0], p0[1]); sctx.lineTo(p1[0], p1[1]);
       }
     }
-    out.push(pts[pts.length - 1]);
-    return out;
+    sctx.stroke();
+
+    // registration target above the top edge
+    const topMid = [(TL[0] + TR[0]) / 2, (TL[1] + TR[1]) / 2];
+    const botMid = [(BL[0] + BR[0]) / 2, (BL[1] + BR[1]) / 2];
+    const up = unit(sub(topMid, botMid)), down = [-up[0], -up[1]];
+    const rc = along(topMid, up, gap + 10 * dpr), r = 6 * dpr * progress;
+    sctx.beginPath();
+    sctx.arc(rc[0], rc[1], r, 0, Math.PI * 2);
+    sctx.moveTo(rc[0] - r * 1.7, rc[1]); sctx.lineTo(rc[0] + r * 1.7, rc[1]);
+    sctx.moveTo(rc[0], rc[1] - r * 1.7); sctx.lineTo(rc[0], rc[1] + r * 1.7);
+    sctx.stroke();
+
+    // slug line under the bottom edge: issue number + the zine's two inks
+    let b1 = BL, b2 = BR;
+    if (b1[0] > b2[0]) [b1, b2] = [b2, b1];   // keep the text upright when the zine is flipped
+    const ang = Math.atan2(b2[1] - b1[1], b2[0] - b1[0]);
+    const z = item.zine;
+    sctx.globalAlpha = alpha * clamp(progress * 1.6 - 0.5, 0, 1);
+    sctx.save();
+    const tp = along(b1, down, gap + 12 * dpr);
+    sctx.translate(tp[0], tp[1]); sctx.rotate(ang);
+    sctx.font = `700 ${9.5 * dpr}px "Space Mono", ui-monospace, monospace`;
+    sctx.textBaseline = 'middle';
+    if ('letterSpacing' in sctx) sctx.letterSpacing = `${1.6 * dpr}px`;
+    sctx.fillText(`JUNKI ${z.issue || ''}`.toUpperCase(), gap + 4 * dpr, 0);   // starts clear of the corner mark
+    sctx.restore();
+    sctx.save();
+    const sp = along(b2, down, gap + 12 * dpr);
+    sctx.translate(sp[0], sp[1]); sctx.rotate(ang);
+    const sq = 8 * dpr;
+    (z.inks || ['#FF48B0', '#0078BF']).slice(0, 2).forEach((ink, i) => {
+      sctx.fillStyle = ink; sctx.fillRect(-gap - 4 * dpr - sq * (2 - i) - (1 - i) * 3 * dpr, -sq / 2, sq, sq);
+    });
+    sctx.restore();
+    sctx.restore();
   }
 
-  function pxPerUnit(item) {
-    item.mesh.getWorldPosition(tmpV);
-    const depth = Math.abs(tmpV.z - camera.position.z);
-    return scribbleCanvas.height / (2 * depth * Math.tan(CONFIG.cameraFOV * DEG / 2)) * layout.scale;
-  }
-
-  function strokeScribble(s, progress, tick) {
-    const item = items[s.index];
-    if (!item || !item.group.visible) return;
-    const curve = catmull(scribblePoints(s, item, tick));
-    // arc length
-    const acc = [0];
-    for (let i = 1; i < curve.length; i++) acc.push(acc[i - 1] + Math.hypot(curve[i][0] - curve[i - 1][0], curve[i][1] - curve[i - 1][1]));
-    const total = acc[acc.length - 1];
-    const from = s.a * (1 - s.len) * total, to = from + s.len * total * progress;
-    const base = CONFIG.scribbleWidth * pxPerUnit(item) * item.ps;
-    sctx.strokeStyle = '#000'; sctx.lineCap = 'round'; sctx.lineJoin = 'round';
-    const span = Math.max(1, s.len * total);
-    for (let i = 1; i < curve.length; i++) {
-      if (acc[i] < from || acc[i - 1] > to) continue;
-      const u = (acc[i] - from) / span;
-      const taper = Math.pow(Math.sin(Math.PI * clamp(u, 0, 1)), 0.45);
-      sctx.lineWidth = Math.max(0.6, base * (0.35 + 0.65 * taper));
-      sctx.beginPath(); sctx.moveTo(curve[i - 1][0], curve[i - 1][1]); sctx.lineTo(curve[i][0], curve[i][1]); sctx.stroke();
-    }
-  }
-
-  function drawScribble(moving) {
+  function drawMarks(moving) {
     if (!introDone && introStart >= 0) {
-      // first scribble waits for the fan-out to land
+      // the first marks wait for the fan-out to land
       const t = clock - introStart;
-      if (t < 0.55 + CONFIG.preloadFanDuration * 0.6) { if (scribble) scribble.start = clock; }
+      if (t < 0.55 + CONFIG.preloadFanDuration * 0.6) { if (marks) marks.start = clock; }
     }
-    const tick = reduce ? 0 : Math.floor(clock * CONFIG.scribbleFps);
-    const progress = scribble ? (reduce ? 1 : easePow2Out(clamp((clock - scribble.start) / CONFIG.scribbleDrawTime, 0, 1))) : 0;
-    if (oldScribble && (progress > 0.35 || clock - scribble.start > 0.3)) { oldScribble = null; scribbleDirty = true; }
-    if (mode !== 'home' && !scribbleDirty) return;
-    if (!moving && !scribbleDirty && tick === lastJitterTick && (progress >= 1 || !scribble)) return;
-    lastJitterTick = tick; scribbleDirty = false;
+    const progress = marks ? (reduce ? 1 : easeCubicOut(clamp((clock - marks.start) / CONFIG.marksDrawTime, 0, 1))) : 0;
+    const oldAlpha = oldMarks ? (reduce ? 0 : 1 - clamp((clock - oldMarks.fadeStart) / 0.2, 0, 1)) : 0;
+    if (oldMarks && oldAlpha <= 0) { oldMarks = null; marksDirty = true; }
+    if (mode !== 'home' && !marksDirty) return;
+    if (!moving && !marksDirty && progress >= 1 && !oldMarks) return;
+    marksDirty = false;
     sctx.clearRect(0, 0, scribbleCanvas.width, scribbleCanvas.height);
     if (mode !== 'home' || introStart < 0 || items.some(it => it.override)) return;
-    if (oldScribble) strokeScribble(oldScribble, 1, tick);
-    if (scribble) strokeScribble(scribble, progress, tick);
+    if (oldMarks) strokeMarks(oldMarks, 1, oldAlpha);
+    if (marks) strokeMarks(marks, progress, 1);
   }
 
   // ── Meta block ─────────────────────────────────────────────────────
@@ -708,7 +710,7 @@ function init() {
     it.override = { kind: 'detail', from, start: clock, dur: reduce ? 0 : CONFIG.openDuration };
     if (push) history.pushState({ zine: ZINES[index].slug }, '', detailUrl(ZINES[index]));
     detail.show(ZINES[index]);
-    scribbleDirty = true; dirty = true;
+    marksDirty = true; dirty = true;
   }
 
   function closeDetail({ push = true } = {}) {
@@ -805,7 +807,7 @@ function init() {
         hero.classList.add('is-ready');
         return;
       }
-      startScribble(startIndex);
+      startMarks(startIndex);
       setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
     };
     if (reduce) {
