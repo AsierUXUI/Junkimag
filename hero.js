@@ -803,6 +803,9 @@ function init() {
     }
   });
 
+  // phones: "See more" opens the zine in front
+  $('see-more').addEventListener('click', () => { if (mode === 'home') open(target); });
+
   $('order-cta').addEventListener('click', e => {
     e.preventDefault();
     if (mode === 'detail') window.JunkiOrder?.open(ZINES[detailIndex].title);
