@@ -90,7 +90,6 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     root.style.setProperty('--tint', `color-mix(in srgb, ${inkA} 18%, #F2F0EB)`);
 
     titleEl.dataset.text = zine.title;
-    $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(window.junkiPrice(zine))}`;
     $('hero-desc').dataset.src = esc(zine.intro || zine.description || '');
     $('hero-order').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
 
