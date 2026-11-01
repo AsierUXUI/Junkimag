@@ -52,7 +52,8 @@ const CONFIG = {
   detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75,
   detailExposure: 1.0, detailKeyIntensity: 1.3,
   // crop marks around the zine in front (px)
-  marksEnabled: 1, marksGap: 10, marksLength: 22, marksDrawTime: 0.4,
+  marksEnabled: 1, marksGap: 10, marksLength: 22, marksDrawTime: 0.5,
+  marksFollow: 11, marksSpread: 14, marksBoil: 0.7, marksBoilFps: 10,
   // back layer
   badgePerItem: 14, shapeSway: 0.8,
 };
@@ -374,7 +375,7 @@ function init() {
       dirty = false;
       marksDirty = true;
     }
-    drawMarks(motion > 1e-5);
+    drawMarks(motion > 1e-5, dt);
     maybeSwapMeta();
   }
   const pillPos = { x: -100, y: -100 };
@@ -443,17 +444,21 @@ function init() {
 
 
   // ── Crop marks ─────────────────────────────────────────────────────
-  // Printer's crop marks snap onto the corners of the zine in front, with a
-  // registration target, the issue number and its two ink swatches, like a
-  // print proof. They follow the zine and redraw on every change.
+  // Printer's crop marks frame the zine in front, with a registration target,
+  // the issue number and its two ink swatches, like a print proof.
+  // Motion: the frame chases the zine with a little lag (each corner at its
+  // own pace, so it skews as it travels), glides across to the next zine on
+  // every change, spreads out while moving and snaps back in when it lands,
+  // and the lines "boil" slightly at 10 fps like hand-registered print.
   const sctx = scribbleCanvas.getContext('2d');
-  let marks = null, oldMarks = null, marksDirty = true;
+  let marks = null, marksDirty = true, disp = null, travel = 0, lastBoil = -1, spin = 0;
 
   function startMarks(index, force = false) {
     if (!CONFIG.marksEnabled) return;
     if (marks && marks.index === index && !force) return;
-    oldMarks = marks ? { ...marks, fadeStart: clock } : null;
-    marks = { index, start: clock };
+    const fresh = !marks || force;
+    marks = { index, start: fresh ? clock : marks.start };
+    if (force) disp = null;        // coming back from a zine page: draw on again
     marksDirty = true;
   }
 
@@ -470,46 +475,52 @@ function init() {
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
   const unit = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
   const along = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k];
+  const boilAt = (seed, tick) => { const s = Math.sin(seed * 127.1 + tick * 311.7) * 43758.5453; return (s - Math.floor(s)) * 2 - 1; };
 
-  function strokeMarks(m, progress, alpha) {
-    const item = items[m.index];
-    if (!item || !item.group.visible || alpha <= 0) return;
+  function strokeMarks(item, corners, progress, tick) {
     const dpr = scribbleCanvas.width / Math.max(1, hero.clientWidth);
-    const [TL, TR, BR, BL] = screenCorners(item);
-    const gap = (CONFIG.marksGap + (1 - progress) * 16) * dpr;   // snaps inward as it appears
-    const len = CONFIG.marksLength * dpr * progress;
+    const boil = reduce ? 0 : CONFIG.marksBoil * dpr;
+    const jit = (k, axis) => boil * boilAt(k * 7.3 + axis, tick);
+    const [TL, TR, BR, BL] = corners.map((c, k) => [c[0] + jit(k, 1), c[1] + jit(k, 2)]);
+    // spread out while travelling, snap in when settled
+    const gap = (CONFIG.marksGap + (1 - progress) * 16 + travel * CONFIG.marksSpread) * dpr;
+    const lenFor = k => CONFIG.marksLength * dpr * easeCubicOut(clamp(progress * 1.4 - k * 0.1, 0, 1)) * (1 - travel * 0.35);
     sctx.save();
-    sctx.globalAlpha = alpha * Math.min(1, progress * 2);
+    sctx.globalAlpha = Math.min(1, progress * 2);
     sctx.strokeStyle = '#111'; sctx.fillStyle = '#111';
     sctx.lineWidth = 1.15 * dpr; sctx.lineCap = 'butt';
     sctx.beginPath();
     // each corner: one mark on the extension of each edge, not touching the zine
-    for (const [c, nh, nv] of [[TL, TR, BL], [TR, TL, BR], [BR, BL, TR], [BL, BR, TL]]) {
+    [[TL, TR, BL], [TR, TL, BR], [BR, BL, TR], [BL, BR, TL]].forEach(([c, nh, nv], k) => {
+      const len = lenFor(k);
       for (const n of [nh, nv]) {
         const d = unit(sub(c, n));
         const p0 = along(c, d, gap), p1 = along(c, d, gap + len);
         sctx.moveTo(p0[0], p0[1]); sctx.lineTo(p1[0], p1[1]);
       }
-    }
+    });
     sctx.stroke();
 
-    // registration target above the top edge
+    // registration target above the top edge; it rolls as the frame travels
     const topMid = [(TL[0] + TR[0]) / 2, (TL[1] + TR[1]) / 2];
     const botMid = [(BL[0] + BR[0]) / 2, (BL[1] + BR[1]) / 2];
     const up = unit(sub(topMid, botMid)), down = [-up[0], -up[1]];
     const rc = along(topMid, up, gap + 10 * dpr), r = 6 * dpr * progress;
+    sctx.save();
+    sctx.translate(rc[0], rc[1]); sctx.rotate(spin + boilAt(9.1, tick) * (reduce ? 0 : 0.03));
     sctx.beginPath();
-    sctx.arc(rc[0], rc[1], r, 0, Math.PI * 2);
-    sctx.moveTo(rc[0] - r * 1.7, rc[1]); sctx.lineTo(rc[0] + r * 1.7, rc[1]);
-    sctx.moveTo(rc[0], rc[1] - r * 1.7); sctx.lineTo(rc[0], rc[1] + r * 1.7);
+    sctx.arc(0, 0, r, 0, Math.PI * 2);
+    sctx.moveTo(-r * 1.7, 0); sctx.lineTo(r * 1.7, 0);
+    sctx.moveTo(0, -r * 1.7); sctx.lineTo(0, r * 1.7);
     sctx.stroke();
+    sctx.restore();
 
-    // slug line under the bottom edge: issue number + the zine's two inks
+    // slug line under the bottom edge: issue number + the zine's two inks (dips while travelling)
     let b1 = BL, b2 = BR;
     if (b1[0] > b2[0]) [b1, b2] = [b2, b1];   // keep the text upright when the zine is flipped
     const ang = Math.atan2(b2[1] - b1[1], b2[0] - b1[0]);
     const z = item.zine;
-    sctx.globalAlpha = alpha * clamp(progress * 1.6 - 0.5, 0, 1);
+    sctx.globalAlpha = clamp(progress * 1.6 - 0.5, 0, 1) * (1 - Math.min(1, travel * 2.5));
     sctx.save();
     const tp = along(b1, down, gap + 12 * dpr);
     sctx.translate(tp[0], tp[1]); sctx.rotate(ang);
@@ -529,22 +540,43 @@ function init() {
     sctx.restore();
   }
 
-  function drawMarks(moving) {
+  function drawMarks(moving, dt = 1 / 60) {
     if (!introDone && introStart >= 0) {
       // the first marks wait for the fan-out to land
       const t = clock - introStart;
       if (t < 0.55 + CONFIG.preloadFanDuration * 0.6) { if (marks) marks.start = clock; }
     }
-    const progress = marks ? (reduce ? 1 : easeCubicOut(clamp((clock - marks.start) / CONFIG.marksDrawTime, 0, 1))) : 0;
-    const oldAlpha = oldMarks ? (reduce ? 0 : 1 - clamp((clock - oldMarks.fadeStart) / 0.2, 0, 1)) : 0;
-    if (oldMarks && oldAlpha <= 0) { oldMarks = null; marksDirty = true; }
-    if (mode !== 'home' && !marksDirty) return;
-    if (!moving && !marksDirty && progress >= 1 && !oldMarks) return;
-    marksDirty = false;
+    const hidden = mode !== 'home' || introStart < 0 || items.some(it => it.override);
+    if (hidden) {
+      if (marksDirty) { sctx.clearRect(0, 0, scribbleCanvas.width, scribbleCanvas.height); marksDirty = false; }
+      disp = null;
+      return;
+    }
+    const item = marks && items[marks.index];
+    if (!item || !item.group.visible) return;
+    const progress = reduce ? 1 : easeCubicOut(clamp((clock - marks.start) / CONFIG.marksDrawTime, 0, 1));
+
+    // chase the zine: every corner eases toward its target at a slightly different pace
+    const goal = screenCorners(item);
+    const diag = Math.hypot(scribbleCanvas.width, scribbleCanvas.height);
+    let off = 0;
+    if (!disp || reduce) disp = goal.map(c => c.slice());
+    else goal.forEach((g, k) => {
+      const kk = damp(CONFIG.marksFollow * (1 - k * 0.09), dt);
+      disp[k][0] += (g[0] - disp[k][0]) * kk; disp[k][1] += (g[1] - disp[k][1]) * kk;
+      off += Math.hypot(g[0] - disp[k][0], g[1] - disp[k][1]);
+    });
+    const travelNow = clamp(off / diag * 6, 0, 1);
+    const prevTravel = travel;
+    travel += (travelNow - travel) * damp(10, dt);
+    spin += (disp ? (travel * 6) : 0) * dt;
+
+    const tick = reduce ? 0 : Math.floor(clock * CONFIG.marksBoilFps);
+    const settling = progress < 1 || off > 0.5 || Math.abs(travel - prevTravel) > 1e-4;
+    if (!moving && !marksDirty && !settling && tick === lastBoil) return;
+    lastBoil = tick; marksDirty = false;
     sctx.clearRect(0, 0, scribbleCanvas.width, scribbleCanvas.height);
-    if (mode !== 'home' || introStart < 0 || items.some(it => it.override)) return;
-    if (oldMarks) strokeMarks(oldMarks, 1, oldAlpha);
-    if (marks) strokeMarks(marks, progress, 1);
+    strokeMarks(item, disp, progress, tick);
   }
 
   // ── Meta block ─────────────────────────────────────────────────────
