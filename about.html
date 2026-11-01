@@ -39,7 +39,7 @@
 
     /* header: same as the home page */
     .nav {
-      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 10;
       display: flex; align-items: center; gap: 22px;
     }
     .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); }
@@ -52,7 +52,7 @@
       margin-left: -1.5px; border-radius: 50%; background: var(--ink);
     }
     .order-cta {
-      position: absolute; top: 18px; right: 18px; text-decoration: none;
+      position: absolute; top: 18px; right: 18px; text-decoration: none; z-index: 10;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
       border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
       transition: background .25s, color .25s;
@@ -61,12 +61,12 @@
 
     main {
       position: relative; z-index: 1;
-      max-width: 760px; margin: 0 auto; padding: clamp(120px, 16vh, 180px) 16px 80px;
+      max-width: 760px; margin: 0 auto; padding: clamp(104px, 14vh, 150px) 16px 56px;
     }
     /* Jonas's drawing behind the top of the page: printed as pink linework,
        fading into the paper before the text gets busy */
     .about-art {
-      position: absolute; left: 0; right: 0; top: 0; height: min(110vh, 1100px); z-index: 0;
+      position: absolute; left: 0; right: 0; top: 0; height: 100vh; z-index: 0;
       background: var(--pink); opacity: .16; pointer-events: none;
       -webkit-mask-image: url(img/jonas-drawing.webp), linear-gradient(transparent 70px, #000 190px, #000 45%, transparent 92%);
       -webkit-mask-size: min(1400px, 140vw) auto, 100% 100%;
@@ -79,33 +79,28 @@
       mask-repeat: repeat, no-repeat;
       mask-composite: intersect;
     }
-    .about-art__credit {
-      position: absolute; right: 18px; top: min(62vh, 620px); z-index: 1;
-      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
-      background: var(--paper); padding: 4px 8px;
-    }
     /* keep the heading and intro crisp over the drawing */
     h1, .lead { position: relative; }
     h1 { text-shadow: 0 0 18px var(--paper), 0 0 6px var(--paper); }
     .lead { display: inline-block; background: var(--paper); padding: 2px 6px; margin-left: -6px; }
     h1 {
       font-family: var(--display); font-weight: 800; text-transform: uppercase;
-      font-size: clamp(44px, 8vw, 120px); line-height: 0.95; letter-spacing: -0.04em;
-      margin-bottom: 40px;
+      font-size: clamp(44px, 7vw, 104px); line-height: 0.95; letter-spacing: -0.04em;
+      margin-bottom: 28px;
     }
     h1 span { color: var(--pink); }
-    .lead { font-size: clamp(18px, 1.6vw, 24px); line-height: 1.35; letter-spacing: -0.03em; margin-bottom: 48px; }
-    .crew { margin-bottom: 56px; }
-    .crew .label { display: block; margin-bottom: 14px; }
+    .lead { font-size: clamp(18px, 1.6vw, 24px); line-height: 1.35; letter-spacing: -0.03em; margin-bottom: 36px; }
+    .crew { margin-bottom: 36px; }
+    .crew .label { display: block; margin-bottom: 10px; }
     .crew__list {
       list-style: none; display: flex; flex-wrap: wrap; gap: 0 .5em;
       font-family: var(--display); font-weight: 800; text-transform: uppercase;
-      font-size: clamp(22px, 2.6vw, 36px); line-height: 1.12; letter-spacing: -0.03em;
+      font-size: clamp(15px, 1.35vw, 20px); line-height: 1.3; letter-spacing: -0.02em;
     }
     /* names run on like a masthead, separated by a pink dot */
     .crew__list li:not(:last-child)::after { content: ' ·'; color: var(--pink); }
     .crew__list li:first-child { color: var(--pink); }
-    .crew__note { margin-top: 16px; font-size: clamp(15px, 1.2vw, 18px); color: rgba(17,17,17,.7); }
+    .crew__note { margin-top: 12px; font-size: clamp(15px, 1.2vw, 18px); color: rgba(17,17,17,.7); }
     .row {
       display: flex; justify-content: space-between; gap: 24px; padding: 10px 0;
       border-top: 1px solid var(--ink);
@@ -117,7 +112,6 @@
     a.value:hover, a.value:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
     @media (max-width: 600px) {
-      .about-art__credit { top: 64px; right: 16px; }
       .nav { gap: 14px; top: 10px; }
       .order-cta { top: auto; bottom: 16px; position: fixed; }
     }
@@ -134,7 +128,6 @@
   <a class="order-cta" href="catalog.html">Order ↗</a>
 
   <div class="about-art" aria-hidden="true"></div>
-  <p class="about-art__credit">Drawing: Jonas Kleis</p>
 
   <main>
 
