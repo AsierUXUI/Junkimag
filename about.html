@@ -68,6 +68,16 @@
     }
     h1 span { color: var(--pink); }
     .lead { font-size: clamp(18px, 1.6vw, 24px); line-height: 1.35; letter-spacing: -0.03em; margin-bottom: 48px; }
+    .crew { margin-bottom: 56px; }
+    .crew .label { display: block; margin-bottom: 14px; }
+    .crew__list {
+      list-style: none; display: flex; flex-wrap: wrap; gap: 0 .5em;
+      font-family: var(--display); font-weight: 800; text-transform: uppercase;
+      font-size: clamp(22px, 2.6vw, 36px); line-height: 1.12; letter-spacing: -0.03em;
+    }
+    /* names run on like a masthead, separated by a pink dot */
+    .crew__list li:not(:last-child)::after { content: ' ·'; color: var(--pink); }
+    .crew__list li:first-child { color: var(--pink); }
     .row {
       display: flex; justify-content: space-between; gap: 24px; padding: 10px 0;
       border-top: 1px solid var(--ink);
@@ -98,6 +108,24 @@
 
     <h1>About <span>Junki</span></h1>
     <p class="lead">Psychadelic Mysticism delivered by Mind Inc.</p>
+    <section class="crew" aria-labelledby="crew-title">
+      <h2 class="label" id="crew-title">Collaborators</h2>
+      <!-- Jonas first: he started Junki. Everyone else alphabetical. -->
+      <ul class="crew__list">
+        <li>Jonas Kleis</li>
+        <li>Asier Morais Manrique</li>
+        <li>Augustinas As</li>
+        <li>Damien Harder Vangdahl</li>
+        <li>Franka Wohlert</li>
+        <li>JeanValeri Hiol</li>
+        <li>Liv Lilholt Thrane</li>
+        <li>Mads Birkely Antkowiak</li>
+        <li>Mika Eldevig</li>
+        <li>Sylvester Borggaard Olsen</li>
+        <li>Teis Kragh</li>
+        <li>Thit Ringbøl Bitsch</li>
+      </ul>
+    </section>
     <div class="rows">
       <div class="row"><span class="label">Contact</span><span class="value">Placeholder email</span></div>
       <div class="row"><span class="label">Instagram</span><a class="value" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">@junkimag ↗</a></div>
