@@ -260,7 +260,8 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     slider.tick(now);
     // scrolling through the pinned gallery section moves the ribbon
     const pr = pin.getBoundingClientRect();
-    gallery.setScrollProgress(clamp(-pr.top / Math.max(1, pr.height - innerHeight), 0, 1));
+    // only while the section is pinned (desktop); on phones it's a normal section you swipe
+    if (pr.height > innerHeight + 10) gallery.setScrollProgress(clamp(-pr.top / (pr.height - innerHeight), 0, 1));
   }
 
   return { show, hide, tick, scroll, get zine() { return current; } };
