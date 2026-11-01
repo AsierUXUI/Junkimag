@@ -1,0 +1,307 @@
+// Zine detail view: the content below and around the 3D zine when a zine is
+// open (index.html?zine=<slug>). The 3D zine itself is drawn by hero.js.
+
+import { makeCover, COVER_W, COVER_H } from './covers.js';
+
+const CONFIG = {
+  titleCounter: 1.05,       // the title counter-scrolls so it looks pinned
+  scrollRange: 0.45,        // × viewport height (must match the zine choreography in hero.js)
+  slideGap: 41, slideParallax: 0.12, snapDuration: 0.8,
+  charStagger: 22, lineStagger: 80,   // ms
+};
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
+  const root = $('detail');
+  const logo = document.querySelector('.nav__logo');
+  const titleEl = $('zine-title');
+  let current = null, visible = false;
+
+  if (reduce) document.documentElement.classList.add('reduced');
+
+  // ── Smooth scroll (only while a zine is open) ──────────────────────
+  const lenis = (window.Lenis && !reduce) ? new window.Lenis({ lerp: 0.1, smoothWheel: true }) : null;
+  lenis?.stop();
+  const scroll = () => (visible ? (lenis ? lenis.scroll : window.scrollY) : 0);
+
+  // ── Text reveal (chars / lines in masks) ───────────────────────────
+  function splitChars(el) {
+    const delay = Number(el.dataset.delay || 0);
+    const text = el.dataset.text ?? el.textContent;
+    el.dataset.text = text;
+    el.setAttribute('aria-label', text);
+    let n = 0;
+    el.innerHTML = text.split(/(\s+)/).map(part => {
+      if (/^\s+$/.test(part)) return ' ';
+      const chars = [...part].map(ch => `<span class="rvl-mask" aria-hidden="true"><span class="rvl-unit" style="--d:${delay + n++ * CONFIG.charStagger}">${esc(ch)}</span></span>`).join('');
+      return `<span class="rvl-word">${chars}</span>`;
+    }).join('');
+    el.classList.add('is-split');
+  }
+
+  function splitLines(el) {
+    const delay = Number(el.dataset.delay || 0);
+    const chunks = el.dataset.src.split(/<br\s*\/?>/i).map(c => { const d = document.createElement('div'); d.innerHTML = c; return d.textContent.trim(); });
+    el.innerHTML = chunks.map(c => c.split(/\s+/).filter(Boolean).map(w => `<span class="rvl-measure">${esc(w)}</span>`).join(' ')).join('<br>');
+    const lines = []; let top = null;
+    el.querySelectorAll('.rvl-measure, br').forEach(node => {
+      if (node.tagName === 'BR') { top = null; return; }
+      if (top === null || Math.abs(node.offsetTop - top) > 2) { lines.push([]); top = node.offsetTop; }
+      lines[lines.length - 1].push(node.textContent);
+    });
+    el.innerHTML = lines.map((words, i) =>
+      `<span class="rvl-line-mask"><span class="rvl-unit" style="--d:${delay + i * CONFIG.lineStagger}">${esc(words.join(' '))}</span></span>`).join('');
+    el.classList.add('is-split');
+  }
+
+  const revealIO = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-revealed'); revealIO.unobserve(e.target); }
+  }, { rootMargin: '0px 0px -12% 0px' });
+
+  function setupReveals() {
+    root.querySelectorAll('[data-reveal], [data-reveal-self]').forEach(el => { el.classList.remove('is-revealed'); revealIO.unobserve(el); });
+    root.querySelectorAll('[data-reveal="chars"]').forEach(splitChars);
+    root.querySelectorAll('[data-reveal="lines"]').forEach(el => {
+      if (!el.dataset.src) el.dataset.src = el.innerHTML;
+      splitLines(el);
+    });
+    root.querySelectorAll('[data-reveal], [data-reveal-self]').forEach(el => {
+      if (reduce) el.classList.add('is-revealed'); else revealIO.observe(el);
+    });
+  }
+  let resizeT;
+  addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => { if (visible) root.querySelectorAll('[data-reveal="lines"]:not(.is-revealed)').forEach(splitLines); slider.measure(); }, 200);
+  });
+
+  // ── Content ────────────────────────────────────────────────────────
+  function render(zine) {
+    document.title = `${zine.title} — Junki Magazine`;
+    const inkA = zine.inks?.[0] || '#FF48B0';
+    root.style.setProperty('--ink-a', inkA);
+    root.style.setProperty('--tint', `color-mix(in srgb, ${inkA} 18%, #F2F0EB)`);
+
+    titleEl.dataset.text = zine.title;
+    $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(zine.price || '')}`;
+    $('intro-text').dataset.src = esc(zine.intro || zine.description || '');
+
+    const cols = [
+      ['Contributors', `<div class="zmeta__value">${(zine.contributors || ['—']).map(esc).join('<br>')}</div>`],
+      ['Format', `<div class="chips">${(zine.formats || ['A5']).map(f => `<span class="chip">${esc(f)}</span>`).join('')}</div>`],
+      ['Price', `<div class="zmeta__value">${esc(zine.price || '—')}</div>`],
+    ];
+    $('zmeta-table').innerHTML = '<span class="zmeta__rule"></span>' + cols.map(([label, value]) =>
+      `<div class="zmeta__col"><p class="label zmeta__label">${esc(label)}</p>${value}</div>`).join('');
+    $('order-btn').textContent = zine.price ? `Order a copy · ${zine.price}` : 'Order a copy';
+
+    buildOthers(zine);
+    slider.setZine(zine);
+  }
+
+  $('order-btn').addEventListener('click', () => current && window.JunkiOrder?.open(current.title));
+
+  // ── Photo slider ───────────────────────────────────────────────────
+  const slider = (() => {
+    const el = $('slider');
+    let slides = [], step = 0, offset = 0, anim = null, drag = null, wheelTimer = null, token = 0;
+
+    function mix(hex, amt) {
+      const n = parseInt(hex.slice(1), 16), p = [0xF2, 0xF0, 0xEB];
+      const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(p[i] + (v - p[i]) * amt));
+      return `rgb(${c.join(',')})`;
+    }
+
+    async function sourcesFor(zine) {
+      if (zine.spreads && zine.spreads.length) return zine.spreads;
+      // Placeholders until real photos of the spreads are added in zines.js (spreads: [...])
+      const inkA = zine.inks?.[0] || '#FF48B0', inkB = zine.inks?.[1] || '#0078BF';
+      const [front, back] = await Promise.all([makeCover(zine, 'front', { cell: 8 }), makeCover(zine, 'back', { cell: 8 })]);
+      const SW = 1600, SH = 1146, ch = 860, cw = ch * COVER_W / COVER_H;
+      const make = draw => { const c = document.createElement('canvas'); c.width = SW; c.height = SH; draw(c.getContext('2d')); return c.toDataURL('image/jpeg', 0.86); };
+      const shadow = (ctx, fn) => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; fn(); ctx.restore(); };
+      return [
+        make(ctx => { ctx.fillStyle = mix(inkA, 0.22); ctx.fillRect(0, 0, SW, SH);
+          shadow(ctx, () => { ctx.drawImage(back, SW / 2 - cw, (SH - ch) / 2, cw, ch); ctx.drawImage(front, SW / 2, (SH - ch) / 2, cw, ch); }); }),
+        make(ctx => { ctx.fillStyle = mix(inkB, 0.25); ctx.fillRect(0, 0, SW, SH);
+          ctx.translate(SW / 2, SH / 2); ctx.rotate(-0.08); shadow(ctx, () => ctx.drawImage(front, -cw / 2, -ch / 2, cw, ch)); }),
+        make(ctx => { ctx.fillStyle = '#F4F1EA'; ctx.fillRect(0, 0, SW, SH);
+          ctx.fillStyle = inkB; for (let y = 20; y < SH; y += 26) for (let x = 20 + (y / 26 % 2) * 13; x < SW; x += 26) { const r = 9 * (x / SW); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+          ctx.fillStyle = '#111'; ctx.font = '700 44px "Space Mono", monospace'; ctx.textAlign = 'center';
+          ctx.fillText('SPREAD PHOTOS COMING SOON', SW / 2, SH / 2 + 15); }),
+        make(ctx => { ctx.fillStyle = mix(inkA, 0.4); ctx.fillRect(0, 0, SW, SH);
+          ctx.translate(SW / 2, SH / 2); ctx.rotate(0.06); shadow(ctx, () => ctx.drawImage(back, -cw / 2, -ch / 2, cw, ch)); }),
+      ];
+    }
+
+    async function setZine(zine) {
+      const my = ++token;
+      el.innerHTML = ''; slides = []; offset = 0; anim = null;
+      const sources = await sourcesFor(zine);
+      if (my !== token) return;   // another zine was opened meanwhile
+      slides = sources.map((src, i) => {
+        const s = document.createElement('div'); s.className = 'slide';
+        s.setAttribute('role', 'group'); s.setAttribute('aria-label', `${i + 1} of ${sources.length}`);
+        const img = new Image(); img.className = 'slide__img'; img.alt = ''; img.src = src; img.draggable = false;
+        s.appendChild(img); el.appendChild(s);
+        return { el: s, img };
+      });
+      measure(); layout();
+    }
+    function measure() { if (slides.length) { step = slides[0].el.offsetWidth + CONFIG.slideGap; snapTo(Math.round(offset / step) * step, 0); } }
+    function layout() {
+      if (!slides.length || !step) return;
+      const L = slides.length * step, sw = slides[0].el.offsetWidth;
+      slides.forEach((s, i) => {
+        let x = ((i * step + offset) % L + L) % L;
+        if (x > L / 2) x -= L;
+        s.el.style.transform = `translate3d(${x.toFixed(1)}px,0,0)`;
+        const shift = clamp(-x * CONFIG.slideParallax, -0.15 * sw, 0.15 * sw);
+        s.img.style.transform = `translate3d(${shift.toFixed(1)}px,0,0)`;
+      });
+    }
+    function snapTo(target, duration = CONFIG.snapDuration) {
+      if (!duration || reduce) { offset = target; anim = null; layout(); return; }
+      anim = { from: offset, to: target, start: performance.now(), dur: duration * 1000 };
+    }
+    function tick(now) {
+      if (!anim) return;
+      const t = clamp((now - anim.start) / anim.dur, 0, 1);
+      offset = lerp(anim.from, anim.to, easeOutCubic(t));
+      if (t >= 1) anim = null;
+      layout();
+    }
+    el.addEventListener('pointerdown', e => {
+      if (e.button > 0 || !step) return;
+      drag = { x0: e.clientX, o0: offset, lastX: e.clientX, lastT: performance.now(), v: 0 };
+      anim = null; el.classList.add('is-dragging'); el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const now = performance.now(), dt = Math.max(1, now - drag.lastT);
+      drag.v = lerp(drag.v, (e.clientX - drag.lastX) / dt, 0.4); drag.lastX = e.clientX; drag.lastT = now;
+      offset = drag.o0 + (e.clientX - drag.x0); layout();
+    });
+    const end = () => {
+      if (!drag) return;
+      const thrown = offset + drag.v * 220;   // inertia
+      drag = null; el.classList.remove('is-dragging');
+      snapTo(Math.round(thrown / step) * step);
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    // horizontal trackpad swipes move the slider; vertical scrolling passes through
+    el.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || !step) return;
+      e.preventDefault(); anim = null;
+      offset -= e.deltaX; layout();
+      clearTimeout(wheelTimer); wheelTimer = setTimeout(() => snapTo(Math.round(offset / step) * step), 140);
+    }, { passive: false });
+    el.addEventListener('pointerenter', () => showPill('Drag'));
+    el.addEventListener('pointerleave', () => showPill(null));
+    el.setAttribute('data-lenis-prevent-touch', '');
+    return { setZine, tick, measure };
+  })();
+
+  // ── Other issues ───────────────────────────────────────────────────
+  const row = $('others-row');
+  const coverCache = new Map();
+  let othersIO = null;
+  function buildOthers(zine) {
+    const others = zines.filter(z => z.slug !== zine.slug);
+    row.scrollLeft = 0;
+    row.innerHTML = others.map(z => `
+      <a class="card" href="index.html?zine=${encodeURIComponent(z.slug)}" style="--ink-a:${esc(z.inks?.[0] || '#FF48B0')}" data-slug="${esc(z.slug)}">
+        <span class="card__name"><strong>${esc(z.title)}</strong><span class="label">${esc(z.price || '')}</span></span>
+        <img class="card__cover" alt="" draggable="false">
+        <span class="card__pill">See this issue</span>
+      </a>`).join('');
+    // covers are generated when the row comes close to the screen
+    othersIO?.disconnect();
+    othersIO = new IntersectionObserver(async entries => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      othersIO.disconnect();
+      for (const card of row.querySelectorAll('.card')) {
+        const z = others.find(o => o.slug === card.dataset.slug);
+        if (!coverCache.has(z.slug)) coverCache.set(z.slug, (await makeCover(z, 'front', { cell: 9 })).toDataURL('image/jpeg', 0.85));
+        card.querySelector('.card__cover').src = coverCache.get(z.slug);
+      }
+    }, { rootMargin: '600px 0px' });
+    othersIO.observe(row);
+  }
+  // drag to scroll with a mouse; a drag doesn't count as a click
+  let d = null;
+  row.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button > 0) return; d = { x: e.clientX, s: row.scrollLeft, moved: false }; });
+  addEventListener('pointermove', e => {
+    if (!d) return;
+    if (Math.abs(e.clientX - d.x) > 5) { d.moved = true; row.classList.add('is-dragging'); }
+    if (d.moved) row.scrollLeft = d.s - (e.clientX - d.x);
+  });
+  addEventListener('pointerup', () => { if (d && d.moved) row.dataset.justDragged = '1'; d = null; row.classList.remove('is-dragging'); setTimeout(() => delete row.dataset.justDragged, 0); });
+  row.addEventListener('click', e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    e.preventDefault();
+    if (row.dataset.justDragged) return;
+    onOpenZine(card.dataset.slug);
+  });
+  row.addEventListener('dragstart', e => e.preventDefault());
+
+  // links back to the carousel stay on this page
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-home]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+    e.preventDefault();
+    onHome();
+  });
+
+  // ── Show / hide ────────────────────────────────────────────────────
+  function jumpTop() {
+    if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+    window.scrollTo(0, 0);
+  }
+
+  function show(zine) {
+    current = zine;
+    jumpTop();
+    render(zine);
+    visible = true;
+    document.documentElement.classList.add('is-detail');
+    root.setAttribute('aria-hidden', 'false');
+    // restart the fade-in when switching between zines
+    root.style.animation = 'none'; void root.offsetWidth; root.style.animation = '';
+    setupReveals();
+    lenis?.start();
+    jumpTop();
+  }
+
+  function hide() {
+    jumpTop();
+    visible = false;
+    current = null;
+    lenis?.stop();
+    document.documentElement.classList.remove('is-detail');
+    root.setAttribute('aria-hidden', 'true');
+    root.querySelectorAll('[data-reveal], [data-reveal-self]').forEach(el => { el.classList.remove('is-revealed'); revealIO.unobserve(el); });
+    showPill(null);
+    logo.style.setProperty('--logo-s', '1');
+  }
+
+  function tick(now) {
+    if (lenis) lenis.raf(now);
+    if (!visible) return;
+    const sy = scroll();
+    const range = CONFIG.scrollRange * innerHeight;
+    titleEl.style.setProperty('--title-y', (Math.min(Math.max(sy, 0), range) * CONFIG.titleCounter).toFixed(1) + 'px');
+    logo.style.setProperty('--logo-s', lerp(1, 0.66, clamp(sy / 150, 0, 1)).toFixed(3));
+    slider.tick(now);
+  }
+
+  return { show, hide, tick, scroll, get zine() { return current; } };
+}

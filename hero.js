@@ -1,6 +1,9 @@
-// Junki hero: a diagonal row of 3D zines.
-// Scroll steps one zine at a time, drag flips a zine to its back cover,
-// a hand-drawn scribble circles the zine in front.
+// Junki home page and zine pages, as one page.
+// Home: a diagonal row of 3D zines. Scroll steps one zine at a time, drag
+// flips a zine to its back cover, a hand-drawn scribble circles the zine in front.
+// Clicking the zine in front opens its detail view (index.html?zine=<slug>):
+// the same 3D zine moves out of the row into the detail hero, so there is no
+// page load in between. The detail content lives in detail.js.
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -8,6 +11,7 @@ import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUnifo
 import { makeCover, waitForFonts } from './covers.js';
 import { createZineKit } from './zine-mesh.js';
 import { createWheelStepper } from './wheel-steps.js';
+import { createDetailView } from './detail.js';
 
 // Every tunable value lives here. Add ?debug to the URL for a live panel.
 const CONFIG = {
@@ -40,8 +44,12 @@ const CONFIG = {
   touchFlickVelocity: 0.35, touchLeadMaxHeight: 0.6,
   // intro
   preloadSpin: 1.1, preloadRiseFrom: 3, preloadRiseDepth: 0.7, preloadFanDuration: 1.15, preloadStagger: 0.07,
-  // leaving for the catalog
-  flightRecede: 2.2, flightStagger: 0.45, flightPopScale: 0.35,
+  // opening a zine: the others drop back out of view, the chosen one moves into the detail hero
+  openDuration: 1.1, closeDuration: 0.9, othersRecede: 4, othersDrop: 2.5, othersRate: 4,
+  // detail hero choreography (scroll-driven)
+  detailScrollRange: 0.45, detailRise: 0.24, detailTilt: 20,
+  detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75,
+  detailExposure: 1.0, detailKeyIntensity: 1.3,
   // scribble
   scribbleEnabled: 1, scribbleFps: 10, scribblePoints: 24, scribbleJitter: 0.028, scribbleLoops: 2,
   scribbleLoopGap: 0.045, scribblePadding: 0.06, scribbleWidth: 0.012, scribbleSweep: 0.68,
@@ -73,7 +81,10 @@ const pill = $('cursor-pill'), pillText = $('cursor-pill-text');
 const badgeEl = $('badge'), shapeEl = $('shape');
 const preloader = $('preloader'), preloaderCount = $('preloader-count');
 
-const detailUrl = z => 'zine.html?zine=' + encodeURIComponent(z.slug);
+const detailUrl = z => '?zine=' + encodeURIComponent(z.slug);
+const slugFromUrl = () => new URLSearchParams(location.search).get('zine');
+const indexOfSlug = slug => ZINES.findIndex(z => z.slug === slug);
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
 // ── Renderer ─────────────────────────────────────────────────────────
 let renderer;
@@ -92,7 +103,7 @@ function startFallback() {
   document.documentElement.classList.add('no-webgl');
   const fb = $('fallback');
   ZINES.forEach(async z => {
-    const a = document.createElement('a'); a.href = detailUrl(z); a.setAttribute('aria-label', z.title);
+    const a = document.createElement('a'); a.href = 'catalog.html?zine=' + encodeURIComponent(z.slug); a.setAttribute('aria-label', z.title);
     fb.appendChild(a);
     const c = await makeCover(z, 'front'); const img = new Image(); img.alt = z.title; img.src = c.toDataURL('image/jpeg', 0.85); a.appendChild(img);
   });
@@ -127,7 +138,10 @@ function init() {
   const strip = new THREE.RectAreaLight(0xffffff, CONFIG.topStripIntensity, 9, 0.35);
   strip.position.set(0, 2.6, 2.2);
   strip.lookAt(0, 0, 0);
-  scene.add(key, fill, rim, strip);
+  // extra light from the left for the detail view, faded in with it
+  const detailKey = new THREE.DirectionalLight(0xffffff, 0);
+  detailKey.position.set(-1, 0.35, 0.9);
+  scene.add(key, fill, rim, strip, detailKey);
 
   const gallery = new THREE.Group();
   scene.add(gallery);
@@ -156,12 +170,14 @@ function init() {
   }
 
   // ── State ──────────────────────────────────────────────────────────
-  const startIndex = 0;
+  const entryIndex = indexOfSlug(slugFromUrl());
+  const startIndex = Math.max(0, entryIndex);
   let x = startIndex, v = 0, target = startIndex;   // spring on the float index
   let dirty = true, lastT = performance.now(), clock = 0;
   let introStart = -1, introDone = reduce;
-  let flight = null;
-  let hovered = null, pointer = { x: -1e4, y: -1e4, ndc: new THREE.Vector2(), inside: false };
+  let mode = 'home', detailIndex = -1, away = 0;      // away: 0 = row in view, 1 = row gone (detail view)
+  const detailTilt = { x: 0, y: 0 };
+  let hovered = null, pointer = { x: -1e4, y: -1e4, nx: 0, ny: 0, ndc: new THREE.Vector2(), inside: false };
   let layout = { rotX: CONFIG.galleryRotX, rotY: CONFIG.galleryRotY, scale: CONFIG.galleryScale, gap: CONFIG.hGap, narrow: false };
   const raycaster = new THREE.Raycaster();
 
@@ -206,6 +222,13 @@ function init() {
     let dt = (now - lastT) / 1000; lastT = now;
     dt = Math.min(dt, MAX_DT);
     clock += dt;
+    detail.tick(now);
+
+    // the row steps back while a zine is open, and comes back after
+    const awayTarget = mode === 'detail' ? 1 : 0;
+    const prevAway = away;
+    away = reduce ? awayTarget : away + (awayTarget - away) * damp(CONFIG.othersRate, dt);
+    if (Math.abs(away - awayTarget) < 1e-3) away = awayTarget;
 
     // spring on the index (semi-implicit Euler, two sub-steps for stability)
     const prevX = x;
@@ -222,15 +245,16 @@ function init() {
     }
     if (swipe) { x = swipe.live; v = swipe.vel; }
 
-    let motion = Math.abs(x - prevX);
+    let motion = Math.abs(x - prevX) + Math.abs(away - prevAway);
     const speed = Math.abs(v);
     const tIntro = introStart < 0 ? -1 : clock - introStart;
     if (tIntro >= 0 && !introDone && tIntro > 0.6 + CONFIG.preloadFanDuration + CONFIG.preloadStagger * 6) introDone = true;
 
     for (const it of items) {
       const d = it.i - x, ad = Math.abs(d);
-      const inRange = ad <= CONFIG.renderRadius + 0.5;
+      const inRange = ad <= CONFIG.renderRadius + 0.5 || !!it.override;
       it.group.visible = inRange && (introStart >= 0 || reduce);
+      if (inRange && it.i !== detailIndex && !it.override && away > 0.97) it.group.visible = false;
       if (!inRange) continue;
       if (!it.loaded) loadTextures(it);
 
@@ -299,16 +323,12 @@ function init() {
         it.group.visible = false;
       }
 
-      // leaving for the catalog
-      if (flight) {
-        const tf = clock - flight.start;
-        if (it.i === flight.index) {
-          is *= 1 + CONFIG.flightPopScale * easeCubicInOut(clamp(tf / 0.5, 0, 1));
-        } else {
-          const delay = Math.min(Math.abs(it.i - flight.index), 4) / 4 * CONFIG.flightStagger;
-          iz -= CONFIG.flightRecede * easeCubicInOut(clamp((tf - delay * 0.4) / 0.5, 0, 1));
-        }
-        motion += 1;
+      // a zine is open: the rest of the row drops back out of view (staggered by distance)
+      if (away > 0 && it.i !== detailIndex) {
+        const rank = Math.min(Math.abs(it.i - target), 4);
+        const a = easeCubicInOut(clamp(away * (1.25 - rank * 0.06), 0, 1));
+        iz -= CONFIG.othersRecede * a;
+        iy -= CONFIG.othersDrop * a * (0.6 + rank * 0.1);
       }
 
       it.group.position.set(ix, iy, iz);
@@ -333,7 +353,19 @@ function init() {
     pillPos.x += (pointer.x - pillPos.x) * 0.25; pillPos.y += (pointer.y - pillPos.y) * 0.25;
     pill.style.setProperty('--x', pillPos.x.toFixed(1) + 'px'); pill.style.setProperty('--y', pillPos.y.toFixed(1) + 'px');
 
-    if (motion > 1e-5 || dirty) {
+    // zines on their way into / out of / sitting in the detail view
+    gallery.updateMatrixWorld(true);
+    if (mode === 'detail' && !coarse && !reduce) {
+      detailTilt.x += (pointer.ny * 0.06 - detailTilt.x) * damp(5, dt);
+      detailTilt.y += (pointer.nx * 0.08 - detailTilt.y) * damp(5, dt);
+    }
+    for (const it of items) if (it.override) { applyOverride(it); motion += 1e-3; }
+    renderer.toneMappingExposure = lerp(CONFIG.exposure, CONFIG.detailExposure, away);
+    detailKey.intensity = CONFIG.detailKeyIntensity * away;
+
+    const detailKeyNow = mode === 'detail' ? [detail.scroll(), detailTilt.x, detailTilt.y, innerWidth, innerHeight].map(n => n.toFixed(3)).join() : '';
+    const detailChanged = detailKeyNow !== lastDetailKey; lastDetailKey = detailKeyNow;
+    if (motion > 1e-5 || dirty || detailChanged) {
       gallery.updateMatrixWorld(true);
       renderer.render(scene, camera);
       dirty = false;
@@ -343,14 +375,77 @@ function init() {
     maybeSwapMeta();
   }
   const pillPos = { x: -100, y: -100 };
+  let lastDetailKey = '';
+
+  // ── Detail view: where the open zine sits, driven by page scroll ───
+  const visH = () => 2 * CONFIG.cameraDistance * Math.tan(CONFIG.cameraFOV * DEG / 2);
+  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _e = new THREE.Euler(), _qz = new THREE.Quaternion();
+  const _p2 = new THREE.Vector3(), _q2 = new THREE.Quaternion(), _s2 = new THREE.Vector3(), _m = new THREE.Matrix4(), _inv = new THREE.Matrix4();
+
+  // World matrix of the zine in the detail hero for a given scroll position.
+  // offsetVh moves it down (in viewport heights) for entering/leaving.
+  function detailPose(sy, out, offsetVh = 0) {
+    const W = innerWidth, H = innerHeight, mobile = W < 768;
+    const H0 = mobile ? Math.min(0.7 * W / 0.705, 0.8 * H) : Math.min(0.569 * W, 0.85 * H);
+    const p = clamp(sy / (CONFIG.detailScrollRange * H), 0, 1);
+    const cyPage = 0.8 * H + H0 / 2 - CONFIG.detailRise * H * p + offsetVh * H;
+    const cyView = cyPage - sy;
+    const scale = lerp(mobile ? CONFIG.detailMobileScaleFrom : CONFIG.detailScaleFrom, mobile ? CONFIG.detailMobileScaleTo : CONFIG.detailScaleTo, p);
+    const k = visH() / H;   // world units per CSS pixel on the z = 0 plane
+    _p.set(0, -(cyView - H / 2) * k, 0);
+    _qz.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -CONFIG.detailTilt * DEG * p);
+    _q.setFromEuler(_e.set(detailTilt.x, p * Math.PI * 2 + detailTilt.y, 0));
+    _q.premultiply(_qz);
+    _s.setScalar(H0 * scale * k / ZH);
+    return out.compose(_p, _q, _s);
+  }
+
+  function blendMatrix(a, b, t, out) {
+    a.decompose(_p, _q, _s); b.decompose(_p2, _q2, _s2);
+    _p.lerp(_p2, t); _q.slerp(_q2, t); _s.lerp(_s2, t);
+    return out.compose(_p, _q, _s);
+  }
+
+  // The zine's natural transform in the row (what the carousel would show).
+  function naturalWorld(it, out) {
+    _m.compose(it.inner.position, it.inner.quaternion, it.inner.scale);
+    return out.multiplyMatrices(it.group.matrixWorld, _m);
+  }
+
+  // Overrides place a zine directly in world space, on top of the row layout.
+  //   kind 'detail': follow the detail pose (blending in from `from`)
+  //   kind 'exit':   leave the detail view downwards, then drop the override
+  //   kind 'return': blend back into the row, then drop the override
+  const _target = new THREE.Matrix4(), _world = new THREE.Matrix4();
+  function applyOverride(it) {
+    const o = it.override;
+    const t = o.dur > 0 ? clamp((clock - o.start) / o.dur, 0, 1) : 1;
+    const e = easeCubicInOut(t);
+    if (o.kind === 'detail') detailPose(detail.scroll(), _target);
+    else if (o.kind === 'exit') detailPose(0, _target, 1.25);
+    else naturalWorld(it, _target);
+    if (o.from && t < 1) blendMatrix(o.from, _target, e, _world); else _world.copy(_target);
+    it.group.visible = true;
+    it.inner.matrixAutoUpdate = false;
+    _inv.copy(it.group.matrixWorld).invert();
+    it.inner.matrix.multiplyMatrices(_inv, _world);
+    it.inner.updateMatrixWorld(true);
+    if (t >= 1 && o.kind !== 'detail') {
+      it.override = null;
+      it.inner.matrixAutoUpdate = true;
+      if (o.kind === 'return' && mode === 'home') startScribble(target, true);
+    }
+  }
+  function currentWorld(it) { it.inner.updateMatrixWorld(true); return it.inner.matrixWorld.clone(); }
+
 
   // ── Scribble ───────────────────────────────────────────────────────
   const sctx = scribbleCanvas.getContext('2d');
   let scribble = null, oldScribble = null, scribbleDirty = true, lastJitterTick = -1;
 
-  function startScribble(index) {
+  function startScribble(index, force = false) {
     if (!CONFIG.scribbleEnabled) return;
-    if (scribble && scribble.index === index) return;
+    if (scribble && scribble.index === index && !force) return;
     oldScribble = scribble;
     const r = Math.random;
     scribble = {
@@ -441,10 +536,11 @@ function init() {
     const tick = reduce ? 0 : Math.floor(clock * CONFIG.scribbleFps);
     const progress = scribble ? (reduce ? 1 : easePow2Out(clamp((clock - scribble.start) / CONFIG.scribbleDrawTime, 0, 1))) : 0;
     if (oldScribble && (progress > 0.35 || clock - scribble.start > 0.3)) { oldScribble = null; scribbleDirty = true; }
+    if (mode !== 'home' && !scribbleDirty) return;
     if (!moving && !scribbleDirty && tick === lastJitterTick && (progress >= 1 || !scribble)) return;
     lastJitterTick = tick; scribbleDirty = false;
     sctx.clearRect(0, 0, scribbleCanvas.width, scribbleCanvas.height);
-    if (flight || introStart < 0) return;
+    if (mode !== 'home' || introStart < 0 || items.some(it => it.override)) return;
     if (oldScribble) strokeScribble(oldScribble, 1, tick);
     if (scribble) strokeScribble(scribble, progress, tick);
   }
@@ -452,7 +548,7 @@ function init() {
   // ── Meta block ─────────────────────────────────────────────────────
   let shownIndex = -1, swapping = false;
   function maybeSwapMeta() {
-    if (swapping || shownIndex === target || introStart < 0) return;
+    if (swapping || shownIndex === target || introStart < 0 || mode !== 'home') return;
     if (!introDone && clock - introStart < 0.9) return;
     if (Math.abs(x - target) < 0.15 && Math.abs(v) < 2.5) swapMeta(target);
   }
@@ -468,8 +564,9 @@ function init() {
   // ── Input: wheel ───────────────────────────────────────────────────
   const wheelSteps = createWheelStepper(CONFIG, dir => step(dir));
   addEventListener('wheel', e => {
+    if (mode !== 'home') return;   // the detail view scrolls normally
     e.preventDefault();
-    if (flight || !introDoneForInput()) return;
+    if (!introDoneForInput()) return;
     const raw = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     wheelSteps(raw, e.deltaMode, performance.now());
   }, { passive: false });
@@ -478,7 +575,7 @@ function init() {
 
   // ── Input: keyboard ────────────────────────────────────────────────
   addEventListener('keydown', e => {
-    if (flight || !introDoneForInput()) return;
+    if (mode !== 'home' || !introDoneForInput()) return;
     if (e.target.closest && e.target.closest('a, button') && e.key === 'Enter') return;
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
@@ -503,16 +600,22 @@ function init() {
     return { item, lx: clamp(local.x / (ZW / 2), -1, 1), ly: clamp(local.y / (ZH / 2), -1, 1) };
   }
   function updateHover() {
-    if (drag || flight || coarse) { setPill(null); return; }
+    if (drag || mode !== 'home' || coarse) { setPill(null); return; }
     hovered = pick();
     hero.classList.toggle('is-hovering', !!hovered);
     setPill(hovered);
     dirty = true;
   }
-  function setPill(h) {
-    pill.classList.toggle('is-visible', !!h);
-    if (h) pillText.textContent = h.item.i === target ? 'See this issue' : 'Bring to front';
+  function setPill(h) { showPill(h ? (h.item.i === target ? 'See this issue' : 'Bring to front') : null); }
+  function showPill(text) {
+    if (coarse) return;
+    pill.classList.toggle('is-visible', !!text);
+    if (text) pillText.textContent = text;
   }
+  addEventListener('pointermove', e => {
+    pointer.x = e.clientX; pointer.y = e.clientY;
+    pointer.nx = e.clientX / innerWidth * 2 - 1; pointer.ny = e.clientY / innerHeight * 2 - 1;
+  });
 
   hero.addEventListener('pointermove', e => {
     setPointer(e);
@@ -550,7 +653,7 @@ function init() {
   });
 
   hero.addEventListener('pointerdown', e => {
-    if (flight || !introDoneForInput() || e.button > 0) return;
+    if (mode !== 'home' || !introDoneForInput() || e.button > 0) return;
     if (e.target.closest('a, button')) return;
     setPointer(e);
     const h = pick();
@@ -583,22 +686,86 @@ function init() {
   hero.addEventListener('pointercancel', endPointer);
   hero.addEventListener('pointerleave', e => { if (!drag) { hovered = null; setPill(null); hero.classList.remove('is-hovering'); } });
 
-  // ── Open: fly out, then go to the catalog with this issue selected ──
-  function open(index) {
-    if (flight) return;
-    const z = ZINES[index];
-    if (reduce) { location.href = detailUrl(z); return; }
-    flight = { index, start: clock };
-    try { sessionStorage.setItem('junki-flight', z.slug); } catch (e) {}
-    hero.classList.add('is-leaving');
-    setPill(null);
-    setTimeout(() => { location.href = detailUrl(z); }, 650);
+  // ── Open / close a zine (no page load) ─────────────────────────────
+  const detail = createDetailView({
+    zines: ZINES,
+    showPill,
+    onOpenZine: slug => switchDetail(indexOfSlug(slug)),
+    onHome: () => closeDetail(),
+  });
+
+  function openDetail(index, { push = true, fromBelow = false } = {}) {
+    if (index < 0 || mode === 'detail') return;
+    const it = items[index];
+    if (!it.loaded) loadTextures(it);
+    goTo(index, { fromUser: false });
+    x = index; v = 0;
+    hovered = null; setPill(null); hero.classList.remove('is-hovering', 'is-grabbing'); drag = null; swipe = null;
+    gallery.updateMatrixWorld(true);
+    const from = fromBelow ? detailPose(0, new THREE.Matrix4(), 0.7) : currentWorld(it);
+    mode = 'detail'; detailIndex = index;
+    it.spin = 0; it.spinVel = 0;
+    it.override = { kind: 'detail', from, start: clock, dur: reduce ? 0 : CONFIG.openDuration };
+    if (push) history.pushState({ zine: ZINES[index].slug }, '', detailUrl(ZINES[index]));
+    detail.show(ZINES[index]);
+    scribbleDirty = true; dirty = true;
   }
-  // coming back with the browser's back button restores the page from cache
-  addEventListener('pageshow', e => { if (e.persisted) { flight = null; hero.classList.remove('is-leaving'); dirty = true; } });
 
-  $('order-cta').addEventListener('click', e => { e.preventDefault(); open(target); });
+  function closeDetail({ push = true } = {}) {
+    if (mode !== 'detail') return;
+    const it = items[detailIndex];
+    const from = currentWorld(it);
+    detail.hide();
+    mode = 'home';
+    it.override = { kind: 'return', from, start: clock, dur: reduce ? 0 : CONFIG.closeDuration };
+    detailIndex = -1;
+    if (push) history.pushState({}, '', location.pathname);
+    document.title = 'Junki Magazine';
+    hero.focus({ preventScroll: true });
+    dirty = true;
+  }
 
+  // From one zine's page to another (the "Other issues" cards).
+  function switchDetail(index) {
+    if (index < 0) return;
+    if (mode !== 'detail') { openDetail(index); return; }
+    if (index === detailIndex) return;
+    const old = items[detailIndex];
+    old.override = { kind: 'exit', from: currentWorld(old), start: clock, dur: reduce ? 0 : 0.7 };
+    const it = items[index];
+    if (!it.loaded) loadTextures(it);
+    target = index; x = index; v = 0;
+    detailIndex = index;
+    it.spin = 0; it.spinVel = 0;
+    it.override = { kind: 'detail', from: detailPose(0, new THREE.Matrix4(), 0.9), start: clock + (reduce ? 0 : 0.15), dur: reduce ? 0 : CONFIG.openDuration };
+    history.pushState({ zine: ZINES[index].slug }, '', detailUrl(ZINES[index]));
+    detail.show(ZINES[index]);
+    dirty = true;
+  }
+
+  function open(index) { openDetail(index); }
+
+  // browser back / forward
+  addEventListener('popstate', () => {
+    const i = indexOfSlug(slugFromUrl());
+    if (i < 0) closeDetail({ push: false });
+    else if (mode !== 'detail') openDetail(i, { push: false });
+    else if (i !== detailIndex) {
+      // same as switchDetail, without adding a history entry
+      const old = items[detailIndex];
+      old.override = { kind: 'exit', from: currentWorld(old), start: clock, dur: reduce ? 0 : 0.7 };
+      const it = items[i]; if (!it.loaded) loadTextures(it);
+      target = i; x = i; v = 0; detailIndex = i;
+      it.override = { kind: 'detail', from: detailPose(0, new THREE.Matrix4(), 0.9), start: clock, dur: reduce ? 0 : CONFIG.openDuration };
+      detail.show(ZINES[i]);
+    }
+  });
+
+  $('order-cta').addEventListener('click', e => {
+    e.preventDefault();
+    if (mode === 'detail') window.JunkiOrder?.open(ZINES[detailIndex].title);
+    else open(target);
+  });
 
   // ── Debug panel (?debug) ───────────────────────────────────────────
   if (new URLSearchParams(location.search).has('debug')) {
@@ -631,6 +798,13 @@ function init() {
     const reveal = () => {
       document.documentElement.removeAttribute('data-preload');
       introStart = clock; target = startIndex; x = startIndex;
+      if (entryIndex >= 0) {
+        // opened straight from a link to a zine: skip the fan-out, the zine rises into its page
+        introDone = true; away = 1;
+        openDetail(entryIndex, { push: false, fromBelow: true });
+        hero.classList.add('is-ready');
+        return;
+      }
       startScribble(startIndex);
       setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
     };
