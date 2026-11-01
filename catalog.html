@@ -40,6 +40,8 @@
     header a.back:hover { background: #000; color: #fff; }
 
     header h1 { font-size: 22px; font-weight: 700; }
+    .catalog-logo { display: block; height: 44px; }
+    .catalog-logo img { height: 100%; width: auto; display: block; }
 
     /* ── Catalog grid ── */
     .catalog {
@@ -137,7 +139,8 @@
 
   <header>
     <a class="back" href="index.html">← Back</a>
-    <h1>Junki Magazine — Catalog</h1>
+    <a class="catalog-logo" href="index.html" aria-label="Junki Magazine, home"><img src="img/junki-logo.png" alt="Junki Magazine"></a>
+    <h1>Catalog</h1>
   </header>
 
   <main class="catalog">
@@ -149,8 +152,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="zines.js"></script>
-  <script src="order.js"></script>
+  <script src="zines.js?v=12"></script>
+  <script src="order.js?v=12"></script>
   <script>
     // Zines come from zines.js (shared with the home page hero).
     var ZINES = window.JUNKI_ZINES || [];
@@ -193,7 +196,7 @@
   <!-- Generated riso covers for zines without a cover image (same as the hero) -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   <script type="module">
-    import { makeCover } from './covers.js';
+    import { makeCover } from './covers.js?v=12';
     document.querySelectorAll('[data-cover]').forEach(async function (el) {
       var zine = (window.JUNKI_ZINES || []).find(function (z) { return z.slug === el.dataset.cover; });
       if (!zine) return;

@@ -67,13 +67,13 @@
        fading into the paper before the text gets busy */
     .about-art {
       position: absolute; left: 0; right: 0; top: 0; height: min(110vh, 1100px); z-index: 0;
-      background: var(--pink); opacity: .5; pointer-events: none;
-      -webkit-mask-image: url(img/jonas-drawing.webp), linear-gradient(#000 45%, transparent 92%);
+      background: var(--pink); opacity: .16; pointer-events: none;
+      -webkit-mask-image: url(img/jonas-drawing.webp), linear-gradient(transparent 70px, #000 190px, #000 45%, transparent 92%);
       -webkit-mask-size: min(1400px, 140vw) auto, 100% 100%;
       -webkit-mask-position: center top, 0 0;
       -webkit-mask-repeat: repeat, no-repeat;
       -webkit-mask-composite: source-in;
-      mask-image: url(img/jonas-drawing.webp), linear-gradient(#000 45%, transparent 92%);
+      mask-image: url(img/jonas-drawing.webp), linear-gradient(transparent 70px, #000 190px, #000 45%, transparent 92%);
       mask-size: min(1400px, 140vw) auto, 100% 100%;
       mask-position: center top, 0 0;
       mask-repeat: repeat, no-repeat;
