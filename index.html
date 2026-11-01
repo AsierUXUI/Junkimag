@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=26",
-        "./detail.js": "./detail.js?v=26",
-        "./covers.js": "./covers.js?v=26",
-        "./zine-mesh.js": "./zine-mesh.js?v=26",
-        "./wheel-steps.js": "./wheel-steps.js?v=26",
-        "./trail.js": "./trail.js?v=26",
-        "./gallery.js": "./gallery.js?v=26"
+        "./hero.js": "./hero.js?v=27",
+        "./detail.js": "./detail.js?v=27",
+        "./covers.js": "./covers.js?v=27",
+        "./zine-mesh.js": "./zine-mesh.js?v=27",
+        "./wheel-steps.js": "./wheel-steps.js?v=27",
+        "./trail.js": "./trail.js?v=27",
+        "./gallery.js": "./gallery.js?v=27"
       }
     }
   </script>
@@ -348,7 +348,7 @@
     .zmeta { position: relative; z-index: 3; padding: 380px 0 140px; }
     .zmeta__table {
       position: relative; width: calc(8 / 12 * 100%); margin: 0 auto;
-      display: grid; grid-template-columns: 477fr 238fr 133fr;
+      display: grid; grid-template-columns: 1.5fr 1.3fr 1fr;
     }
     .zmeta__rule { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hair); transform-origin: left; transform: scaleX(0); transition: transform .9s cubic-bezier(0.22, 1, 0.36, 1); }
     .zmeta__col { position: relative; padding: 28px 20px 0; }
@@ -363,9 +363,11 @@
     .zmeta__label { color: var(--pink); margin-bottom: 10px; filter: brightness(.85); }
     .zmeta__value { font-size: 1.46vw; line-height: 1.3; letter-spacing: -0.03em; }
     .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    /* format details as pills (sized to the text) */
+    .chips { gap: 6px; }
     .chip {
-      width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(17,17,17,.25);
-      display: grid; place-items: center; font-size: 13px; font-weight: 500;
+      display: inline-flex; align-items: center; height: 34px; padding: 0 14px; white-space: nowrap;
+      border-radius: 500px; border: 1px solid rgba(17,17,17,.25); font-size: 13px; font-weight: 500;
     }
     .zmeta__cta { display: flex; justify-content: center; margin-top: 72px; }
     .btn {
@@ -625,9 +627,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=26"></script>
+  <script src="zines.js?v=27"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=26"></script>
+  <script src="order.js?v=27"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -636,6 +638,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=26"></script>
+  <script type="module" src="hero.js?v=27"></script>
 </body>
 </html>
