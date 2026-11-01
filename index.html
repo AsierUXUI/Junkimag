@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=20",
-        "./detail.js": "./detail.js?v=20",
-        "./covers.js": "./covers.js?v=20",
-        "./zine-mesh.js": "./zine-mesh.js?v=20",
-        "./wheel-steps.js": "./wheel-steps.js?v=20",
-        "./trail.js": "./trail.js?v=20",
-        "./gallery.js": "./gallery.js?v=20"
+        "./hero.js": "./hero.js?v=22",
+        "./detail.js": "./detail.js?v=22",
+        "./covers.js": "./covers.js?v=22",
+        "./zine-mesh.js": "./zine-mesh.js?v=22",
+        "./wheel-steps.js": "./wheel-steps.js?v=22",
+        "./trail.js": "./trail.js?v=22",
+        "./gallery.js": "./gallery.js?v=22"
       }
     }
   </script>
@@ -156,13 +156,6 @@
       content: ''; position: absolute; left: 50%; bottom: -5px; width: 3px; height: 3px;
       margin-left: -1.5px; border-radius: 50%; background: var(--ink);
     }
-    .order-cta {
-      position: absolute; top: 18px; right: 18px; text-decoration: none; cursor: pointer; color: var(--ink); background: var(--paper);
-      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
-      border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
-      transition: background .25s var(--ease-io), color .25s var(--ease-io);
-    }
-    .order-cta:hover, .order-cta:focus-visible { background: var(--ink); color: var(--paper); }
 
     /* meta block (top left) */
     .meta { position: absolute; top: 14px; left: 14px; width: clamp(240px, 21vw, 340px); }
@@ -272,8 +265,6 @@
       .nav { gap: 14px; top: 10px; }
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
-      .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
-      html:not(.is-detail) .order-cta { display: none; }   /* home screen: "See more" instead */
       .prompt { display: none; }
       .social { display: none; }
       .see-more { display: flex; }
@@ -530,7 +521,6 @@
       <a class="nav__link is-active" href="index.html" data-home aria-current="page">Zines</a>
       <a class="nav__link" href="about.html">About us</a>
     </nav>
-    <button class="order-cta" id="order-cta" type="button">Order ↗</button>
   </header>
 
   <section class="hero" id="hero" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Junki zines. Use the left and right arrow keys to browse, Enter to open the zine in front.">
@@ -631,9 +621,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=20"></script>
+  <script src="zines.js?v=22"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=20"></script>
+  <script src="order.js?v=22"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -642,6 +632,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=20"></script>
+  <script type="module" src="hero.js?v=22"></script>
 </body>
 </html>
