@@ -95,7 +95,9 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     $('hero-order').textContent = zine.price ? `Order a copy · ${zine.price}` : 'Order a copy';
 
     const cols = [
-      ['Contributors', `<div class="zmeta__value">${(zine.contributors || ['—']).map(esc).join('<br>')}</div>`],
+      zine.contents
+        ? ['Includes', `<div class="zmeta__value">${zine.contents.map(esc).join('<br>')}</div>`]
+        : ['Contributors', `<div class="zmeta__value">${(zine.contributors?.length ? zine.contributors : ['—']).map(esc).join('<br>')}</div>`],
       ['Format', `<div class="chips">${(zine.formats || ['A5']).map(f => `<span class="chip">${esc(f)}</span>`).join('')}</div>`],
       ['Price', `<div class="zmeta__value">${esc(zine.price || '—')}</div>`],
     ];

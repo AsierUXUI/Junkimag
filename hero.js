@@ -154,7 +154,7 @@ function init() {
   const { ZW, ZH, ZT } = kit;
 
   const items = ZINES.map((zine, i) => {
-    const z = kit.build(zine);
+    const z = zine.kind === 'set' ? kit.buildSet(zine, ZINES.filter(o => o.kind !== 'set')) : kit.build(zine);
     z.mesh.userData.index = i;
     const group = new THREE.Group(); group.add(z.inner); group.visible = false;
     gallery.add(group);
@@ -466,7 +466,7 @@ function init() {
   function screenCorners(item) {
     const w = scribbleCanvas.width, h = scribbleCanvas.height;
     return [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([sx, sy]) => {
-      tmpV.set(sx * ZW / 2, sy * ZH / 2, ZT / 2);
+      tmpV.set(sx * item.dims.w / 2, sy * item.dims.h / 2, item.dims.d / 2);
       item.mesh.localToWorld(tmpV);
       tmpV.project(camera);
       return [(tmpV.x * 0.5 + 0.5) * w, (-tmpV.y * 0.5 + 0.5) * h];
@@ -894,10 +894,10 @@ function renderMeta(index, animate) {
     rowsHTML([
       ['Issue', z.issue || '—'],
       ['Year', z.year || '—'],
-      ['Contributors', (z.contributors && z.contributors.length) ? z.contributors : '—'],
+      z.contents ? ['Includes', z.contents] : ['Contributors', (z.contributors && z.contributors.length) ? z.contributors : '—'],
     ], 1);
   notesEl.innerHTML = rowsHTML([
-    ['Format', 'A5, stapled'],
+    ['Format', z.kind === 'set' ? 'Slipcase' : 'A5, stapled'],
     ['Price', z.price || '—'],
     ['Tip', coarse ? 'Swipe to browse' : 'Drag to flip'],
   ], 2);

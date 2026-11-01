@@ -13,6 +13,9 @@
 //                 a riso-style placeholder cover is generated.
 //   inks          two riso ink colours for the generated cover
 //   paper         'uncoated' (matte) or 'glossy'
+//   kind          'set' for the box set (a slipcase with all the zines, poster and
+//                 stickers); it is shown last in the carousel
+//   contents      for the box set: what's inside, shown instead of contributors
 //
 // Optional, used on the zine's own page (index.html?zine=<slug>):
 //   intro         paragraph under the hero (falls back to description)
@@ -31,4 +34,6 @@ window.JUNKI_ZINES = [
   { slug: 'issue-06', title: 'Issue 06', issue: 'Nº 06', year: null, contributors: ['Contributor C', 'Contributor G'], price: '€5', description: 'Placeholder description for issue 06.', front: '', back: '', inks: ['#765BA7', '#00A95C'], paper: 'glossy' },
   { slug: 'issue-07', title: 'Issue 07', issue: 'Nº 07', year: null, contributors: ['Contributor B', 'Contributor H'], price: '€5', description: 'Placeholder description for issue 07.', front: '', back: '', inks: ['#FF48B0', '#FFE800'], paper: 'uncoated' },
   { slug: 'issue-08', title: 'Issue 08', issue: 'Nº 08', year: null, contributors: ['Contributor E'], price: '€5', description: 'Placeholder description for issue 08.', front: '', back: '', inks: ['#0078BF', '#FF6C2F'], paper: 'uncoated' },
+  // The box set: always keep it last. Price and contents are placeholders.
+  { slug: 'box-set', kind: 'set', title: 'Box Set', issue: 'Box set', year: null, contributors: [], contents: ['All available issues', 'Poster', 'Stickers'], formats: ['Slipcase', 'Poster', 'Stickers'], price: '€30', description: 'Every available Junki zine in one slipcase, with a poster and a sheet of stickers.', front: '', back: '', inks: ['#FF48B0', '#0078BF'], paper: 'uncoated' },
 ];

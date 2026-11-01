@@ -141,8 +141,9 @@ function drawFrontArt(zine, rand) {
   sa.textAlign = 'right'; sa.fillText(String(zine.year || ''), W - 64, 410);
 
   // Ink B solid: big issue number and small marks
-  sb.font = `800 520px ${DISPLAY}`; sb.textAlign = 'right';
-  const num = (zine.issue || '').replace(/[^0-9]/g, '') || '00';
+  const isSet = zine.kind === 'set';
+  sb.font = `800 ${isSet ? 330 : 520}px ${DISPLAY}`; sb.textAlign = 'right';
+  const num = isSet ? 'SET' : ((zine.issue || '').replace(/[^0-9]/g, '') || '00');
   sb.save(); sb.translate(W - 40, H - 120); sb.rotate(-0.06 + rand() * 0.04); sb.fillText(num, 0, 0); sb.restore();
   sb.font = `700 30px ${MONO}`; sb.textAlign = 'left';
   sb.fillText(zine.issue || '', 64, H - 70);

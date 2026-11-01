@@ -78,6 +78,7 @@
     /* names run on like a masthead, separated by a pink dot */
     .crew__list li:not(:last-child)::after { content: ' ·'; color: var(--pink); }
     .crew__list li:first-child { color: var(--pink); }
+    .crew__note { margin-top: 16px; font-size: clamp(15px, 1.2vw, 18px); color: rgba(17,17,17,.7); }
     .row {
       display: flex; justify-content: space-between; gap: 24px; padding: 10px 0;
       border-top: 1px solid var(--ink);
@@ -125,11 +126,12 @@
         <li>Teis Kragh</li>
         <li>Thit Ringbøl Bitsch</li>
       </ul>
+      <p class="crew__note">Based in Copenhagen, made by a crew of several nationalities.</p>
     </section>
     <div class="rows">
       <div class="row"><span class="label">Contact</span><span class="value">Placeholder email</span></div>
       <div class="row"><span class="label">Instagram</span><a class="value" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">@junkimag ↗</a></div>
-      <div class="row"><span class="label">Based in</span><span class="value">Placeholder city</span></div>
+      <div class="row"><span class="label">Based in</span><span class="value">Copenhagen, Denmark</span></div>
     </div>
   </main>
 </body>
