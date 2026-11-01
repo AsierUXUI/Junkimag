@@ -171,7 +171,7 @@
           '<p>' + zine.description + '</p>' +
         '</div>' +
         '<div class="card-footer">' +
-          '<span class="price">' + zine.price + '</span>' +
+          '<span class="price">' + window.junkiPrice(zine) + '</span>' +
           '<button data-issue="' + zine.title + '" data-slug="' + zine.slug + '">Buy</button>' +
         '</div>';
       grid.appendChild(card);

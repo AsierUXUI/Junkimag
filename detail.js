@@ -90,20 +90,20 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     root.style.setProperty('--tint', `color-mix(in srgb, ${inkA} 18%, #F2F0EB)`);
 
     titleEl.dataset.text = zine.title;
-    $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(zine.price || '')}`;
+    $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(window.junkiPrice(zine))}`;
     $('hero-desc').dataset.src = esc(zine.intro || zine.description || '');
-    $('hero-order').textContent = zine.price ? `Order a copy · ${zine.price}` : 'Order a copy';
+    $('hero-order').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
 
     const cols = [
       zine.contents
         ? ['Includes', `<div class="zmeta__value">${zine.contents.map(esc).join('<br>')}</div>`]
         : ['Contributors', `<div class="zmeta__value">${(zine.contributors?.length ? zine.contributors : ['—']).map(esc).join('<br>')}</div>`],
       ['Format', `<div class="chips">${(zine.formats || ['A5']).map(f => `<span class="chip">${esc(f)}</span>`).join('')}</div>`],
-      ['Price', `<div class="zmeta__value">${esc(zine.price || '—')}</div>`],
+      ['Price', `<div class="zmeta__value">${esc(window.junkiPrice(zine) || '—')}</div>`],
     ];
     $('zmeta-table').innerHTML = '<span class="zmeta__rule"></span>' + cols.map(([label, value]) =>
       `<div class="zmeta__col"><p class="label zmeta__label">${esc(label)}</p>${value}</div>`).join('');
-    $('order-btn').textContent = zine.price ? `Order a copy · ${zine.price}` : 'Order a copy';
+    $('order-btn').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
 
     buildOthers(zine);
     slider.setZine(zine);
@@ -171,7 +171,7 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     row.scrollLeft = 0;
     row.innerHTML = others.map(z => `
       <a class="card" href="index.html?zine=${encodeURIComponent(z.slug)}" style="--ink-a:${esc(z.inks?.[0] || '#FF48B0')}" data-slug="${esc(z.slug)}">
-        <span class="card__name"><strong>${esc(z.title)}</strong><span class="label">${esc(z.price || '')}</span></span>
+        <span class="card__name"><strong>${esc(z.title)}</strong><span class="label">${esc(window.junkiPrice(z))}</span></span>
         <img class="card__cover" alt="" draggable="false">
         <span class="card__pill">See this issue</span>
       </a>`).join('');

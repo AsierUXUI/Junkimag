@@ -195,7 +195,7 @@ function drawBackArt(zine, rand) {
   line('ISSUE', zine.issue || '—');
   line('YEAR', zine.year ? String(zine.year) : '—');
   (zine.contributors || []).forEach((c, i) => line(i === 0 ? 'CONTRIBUTORS' : '', c));
-  line('PRICE', zine.price || '—');
+  line('PRICE', [zine.price, zine.priceDkk].filter(Boolean).join(' / ') || '—');
 
   // barcode
   const bx = W - 64 - 300, by = H - 260;

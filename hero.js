@@ -898,7 +898,7 @@ function renderMeta(index, animate) {
     ], 1);
   notesEl.innerHTML = rowsHTML([
     ['Format', z.kind === 'set' ? 'Slipcase' : 'A5, stapled'],
-    ['Price', z.price || '—'],
+    ['Price', window.junkiPrice(z) || '—'],
     ['Tip', coarse ? 'Swipe to browse' : 'Drag to flip'],
   ], 2);
   for (const el of [metaEl, notesEl]) {
