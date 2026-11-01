@@ -42,8 +42,8 @@ const CONFIG = {
   wheelRiseFactor: 1.2, wheelTickGap: 34, wheelPauseGap: 130, wheelIdleReset: 150,
   wheelMinStepTick: 90, wheelMinStepFlick: 190, wheelSustainDelay: 480, wheelSustainRatio: 0.8,
   // touch
-  touchFlickVelocity: 0.35, touchLeadMaxHeight: 0.6,
-  mobileDrop: 0.08,      // phones: how far the row sits below the middle (× screen height)
+  touchFlickVelocity: 0.35, touchLeadMaxHeight: 0.56,
+  mobileDrop: 0.11,      // phones: how far the row sits below the middle (× screen height)
   // intro
   preloadSpin: 1.1, preloadRiseFrom: 3, preloadRiseDepth: 0.7, preloadFanDuration: 1.15, preloadStagger: 0.07,
   // opening a zine: the others drop back out of view, the chosen one moves into the detail hero
@@ -209,7 +209,7 @@ function init() {
     if (narrow) {
       const s = Math.min(CONFIG.touchLeadMaxHeight * visH / ZH, 0.62 * visW / ZW);
       // taller phones have more room under the row, so it drops a bit further toward the button
-      const drop = clamp(CONFIG.mobileDrop + (1 / camera.aspect - 2) * 0.2, 0.04, 0.15);
+      const drop = clamp(CONFIG.mobileDrop + (1 / camera.aspect - 2) * 0.2, 0.06, 0.18);
       layout = { rotX: -14, rotY: -16, scale: s, gap: ZW * 1.08, narrow, drop: drop * visH };
     } else {
       const s = Math.min(CONFIG.galleryScale, 0.68 * visH / ZH);
@@ -902,7 +902,7 @@ function renderMeta(index, animate) {
     rowsHTML([
       ['Issue', z.issue || '—'],
       ['Year', z.year || '—'],
-      ['Format', z.kind === 'set' ? 'Slipcase' : 'A5, stapled'],
+      ['Format', z.format || 'A5, stapled'],
       ['Price', window.junkiPrice(z) || '—'],
     ], 1);
   metaEl.classList.remove('is-out');
