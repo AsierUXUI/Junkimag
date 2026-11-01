@@ -95,7 +95,6 @@ function startFallback() {
     fb.appendChild(a);
     const c = await makeCover(z, 'front'); const img = new Image(); img.alt = z.title; img.src = c.toDataURL('image/jpeg', 0.85); a.appendChild(img);
   });
-  buildIndex(i => { location.href = orderUrl(ZINES[i]); });
   renderMeta(0, false);
   document.documentElement.removeAttribute('data-preload');
   preloader.classList.add('is-done');
@@ -514,11 +513,10 @@ function init() {
   // ── Input: keyboard ────────────────────────────────────────────────
   addEventListener('keydown', e => {
     if (flight || !introDoneForInput()) return;
-    if (e.target.closest && e.target.closest('.index__list, a, button') && e.key === 'Enter') return;
+    if (e.target.closest && e.target.closest('a, button') && e.key === 'Enter') return;
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     else if (e.key === 'Enter' && (e.target === hero || e.target === document.body)) { e.preventDefault(); open(target); }
-    else if (e.key === 'Escape') closeIndex();
   });
 
   // ── Input: pointer (hover, press, drag to flip, swipe) ─────────────
@@ -587,13 +585,12 @@ function init() {
 
   hero.addEventListener('pointerdown', e => {
     if (flight || !introDoneForInput() || e.button > 0) return;
-    if (e.target.closest('a, button, .index__list')) return;
+    if (e.target.closest('a, button')) return;
     setPointer(e);
     const h = pick();
     drag = { x0: e.clientX, y0: e.clientY, t0: performance.now(), lastT: performance.now(), item: h?.item || null, moved: false, mode: null, vel: 0, spin0: h?.item.spin || 0 };
     if (h) { h.item.pressX = h.lx; h.item.pressY = h.ly; h.item.spinVel = 0; }
     hero.setPointerCapture(e.pointerId);
-    closeIndex();
   });
 
   function endPointer(e) {
@@ -635,8 +632,6 @@ function init() {
 
   $('order-cta').addEventListener('click', e => { e.preventDefault(); open(target); });
 
-  // ── Index dropdown ─────────────────────────────────────────────────
-  buildIndex(i => { goTo(i); closeIndex(); });
 
   // ── Debug panel (?debug) ───────────────────────────────────────────
   if (new URLSearchParams(location.search).has('debug')) {
@@ -725,22 +720,4 @@ function renderMeta(index, animate) {
 function announce(index) {
   const z = ZINES[index]; if (!z) return;
   liveEl.textContent = [z.issue, z.title, z.year].filter(Boolean).join(', ');
-}
-
-function buildIndex(onPick) {
-  const wrap = document.getElementById('index'), btn = document.getElementById('index-btn'), list = document.getElementById('index-list');
-  list.innerHTML = ZINES.map((z, i) => `<li><button data-i="${i}"><span>${esc(z.title)}</span><span class="num">${esc(z.issue || '')}</span></button></li>`).join('');
-  btn.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = !wrap.classList.contains('is-open');
-    wrap.classList.toggle('is-open', open); btn.setAttribute('aria-expanded', String(open));
-  });
-  list.addEventListener('click', e => {
-    const b = e.target.closest('button[data-i]'); if (b) onPick(Number(b.dataset.i));
-  });
-  document.addEventListener('click', e => { if (!wrap.contains(e.target)) closeIndex(); });
-}
-function closeIndex() {
-  const wrap = document.getElementById('index'); if (!wrap) return;
-  wrap.classList.remove('is-open'); document.getElementById('index-btn').setAttribute('aria-expanded', 'false');
 }

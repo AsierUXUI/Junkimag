@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>About us — Junki Magazine</title>
+  <meta name="description" content="About Junki Magazine.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #F2F0EB;
+      --ink: #111111;
+      --muted: rgba(17, 17, 17, 0.55);
+      --pink: #FF48B0;
+      --blue: #0078BF;
+      --display: 'Bricolage Grotesque', 'Arial Black', sans-serif;
+      --body: 'Inter', system-ui, sans-serif;
+      --label: 'Space Mono', ui-monospace, monospace;
+      --fs-body: clamp(12px, 0.9375vw, 16px);
+      --fs-label: clamp(9px, 0.6vw, 12px);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; background: var(--paper); color: var(--ink);
+      font-family: var(--body); font-weight: 500; font-size: var(--fs-body);
+      line-height: 1.4; letter-spacing: -0.025em; -webkit-font-smoothing: antialiased;
+    }
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      opacity: 0.18; mix-blend-mode: multiply;
+    }
+    a { color: inherit; }
+
+    /* header: same as the home page */
+    .nav {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 22px;
+    }
+    .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); }
+    .nav__logo img { height: 100%; width: auto; display: block; }
+    .nav__link { position: relative; text-decoration: none; color: var(--muted); white-space: nowrap; padding: 4px 0; }
+    .nav__link:hover, .nav__link:focus-visible { color: var(--ink); }
+    .nav__link.is-active { color: var(--ink); }
+    .nav__link.is-active::after {
+      content: ''; position: absolute; left: 50%; bottom: -5px; width: 3px; height: 3px;
+      margin-left: -1.5px; border-radius: 50%; background: var(--ink);
+    }
+    .order-cta {
+      position: absolute; top: 18px; right: 18px; text-decoration: none;
+      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
+      border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
+      transition: background .25s, color .25s;
+    }
+    .order-cta:hover, .order-cta:focus-visible { background: var(--ink); color: var(--paper); }
+
+    main {
+      max-width: 760px; margin: 0 auto; padding: clamp(120px, 16vh, 180px) 16px 80px;
+    }
+    h1 {
+      font-family: var(--display); font-weight: 800; text-transform: uppercase;
+      font-size: clamp(44px, 8vw, 120px); line-height: 0.95; letter-spacing: -0.04em;
+      margin-bottom: 40px;
+    }
+    h1 span { color: var(--pink); }
+    .lead { font-size: clamp(18px, 1.6vw, 24px); line-height: 1.35; letter-spacing: -0.03em; margin-bottom: 48px; }
+    .row {
+      display: flex; justify-content: space-between; gap: 24px; padding: 10px 0;
+      border-top: 1px solid var(--ink);
+    }
+    .row:last-child { border-bottom: 1px solid var(--ink); }
+    .label { font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase; padding-top: 3px; }
+    .value { text-align: right; }
+
+    @media (max-width: 600px) {
+      .nav { gap: 14px; top: 10px; }
+      .order-cta { top: auto; bottom: 16px; position: fixed; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Main">
+    <a class="nav__logo" href="index.html" aria-label="Junki Magazine, home">
+      <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
+    </a>
+    <a class="nav__link" href="index.html">Zines</a>
+    <a class="nav__link is-active" href="about.html" aria-current="page">About us</a>
+  </nav>
+  <a class="order-cta" href="catalog.html">Order ↗</a>
+
+  <main>
+    <!-- Placeholder copy: replace with the real text about Junki. -->
+    <h1>About <span>Junki</span></h1>
+    <p class="lead">Placeholder: a few sentences about who makes Junki, what it's about and how it's printed.</p>
+    <div class="rows">
+      <div class="row"><span class="label">Contact</span><span class="value">Placeholder email</span></div>
+      <div class="row"><span class="label">Instagram</span><span class="value">Placeholder handle</span></div>
+      <div class="row"><span class="label">Based in</span><span class="value">Placeholder city</span></div>
+    </div>
+  </main>
+</body>
+</html>
