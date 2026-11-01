@@ -67,7 +67,7 @@
 
     .card-cover {
       width: 100%;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 148 / 210;
       background: #f0f0f0;
       border-bottom: 2px solid #000;
       overflow: hidden;
@@ -281,15 +281,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="zines.js"></script>
   <script>
-    // ── Zine catalog ─────────────────────────────────────────────────
-    // Add / remove / edit entries here to update the catalog.
-    // cover: path to an image file, or leave as '' for a placeholder.
-    var ZINES = [
-      { title: 'Issue 1', cover: '', description: 'The first issue.', price: '€5' },
-      { title: 'Issue 2', cover: '', description: 'The second issue.', price: '€5' },
-      { title: 'Issue 3', cover: '', description: 'The third issue.',  price: '€5' },
-    ];
+    // Zines come from zines.js (shared with the home page hero).
+    var ZINES = window.JUNKI_ZINES || [];
 
     // ── EmailJS config ────────────────────────────────────────────────
     var EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
@@ -298,7 +293,7 @@
     var REPLY_TEMPLATE_ID   = 'YOUR_REPLY_TEMPLATE_ID';
     // ─────────────────────────────────────────────────────────────────
 
-    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    if (window.emailjs) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
     // Build grid
     var grid = document.getElementById('zine-grid');
@@ -309,7 +304,7 @@
         '<div class="card-cover">' +
           (zine.cover
             ? '<img src="' + zine.cover + '" alt="' + zine.title + '">'
-            : '<span class="placeholder-text">Cover coming soon</span>') +
+            : '<span class="placeholder-text" data-cover="' + zine.slug + '">Cover coming soon</span>') +
         '</div>' +
         '<div class="card-body">' +
           '<h3>' + zine.title + '</h3>' +
@@ -317,7 +312,7 @@
         '</div>' +
         '<div class="card-footer">' +
           '<span class="price">' + zine.price + '</span>' +
-          '<button data-issue="' + zine.title + '">Buy</button>' +
+          '<button data-issue="' + zine.title + '" data-slug="' + zine.slug + '">Buy</button>' +
         '</div>';
       grid.appendChild(card);
     });
@@ -325,18 +320,25 @@
     // Modal open / close
     var overlay = document.getElementById('modal-overlay');
 
-    grid.addEventListener('click', function (e) {
-      var btn = e.target.closest('button[data-issue]');
-      if (!btn) return;
-      document.getElementById('f-issue').value = btn.dataset.issue;
-      document.getElementById('f-qty').value = 1;
+    function openModal(issue) {
       document.getElementById('order-form').reset();
-      document.getElementById('f-issue').value = btn.dataset.issue;
+      document.getElementById('f-issue').value = issue;
+      document.getElementById('f-qty').value = 1;
       document.getElementById('form-status').className = '';
       document.getElementById('form-status').style.display = 'none';
       overlay.classList.add('open');
       document.getElementById('f-name').focus();
+    }
+
+    grid.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-issue]');
+      if (btn) openModal(btn.dataset.issue);
     });
+
+    // Coming from the home page hero: catalog.html?zine=<slug> opens that issue's order form
+    var wanted = new URLSearchParams(location.search).get('zine');
+    var wantedZine = ZINES.find(function (z) { return z.slug === wanted; });
+    if (wantedZine) openModal(wantedZine.title);
 
     document.getElementById('modal-close').addEventListener('click', closeModal);
     overlay.addEventListener('click', function (e) {
@@ -371,6 +373,7 @@
       status.style.display = 'none';
 
       try {
+        if (!window.emailjs) throw new Error('EmailJS did not load');
         await emailjs.send(EMAILJS_SERVICE_ID, ORDER_TEMPLATE_ID, params);
         await emailjs.send(EMAILJS_SERVICE_ID, REPLY_TEMPLATE_ID, params);
         status.className   = 'success';
@@ -384,6 +387,21 @@
         btn.disabled = false;
         btn.textContent = 'Place order';
       }
+    });
+  </script>
+
+  <!-- Generated riso covers for zines without a cover image (same as the hero) -->
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { makeCover } from './covers.js';
+    document.querySelectorAll('[data-cover]').forEach(async function (el) {
+      var zine = (window.JUNKI_ZINES || []).find(function (z) { return z.slug === el.dataset.cover; });
+      if (!zine) return;
+      var c = await makeCover(zine, 'front', { cell: 9 });
+      var img = new Image();
+      img.alt = zine.title;
+      img.src = c.toDataURL('image/jpeg', 0.85);
+      el.replaceWith(img);
     });
   </script>
 
