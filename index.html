@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=18",
-        "./detail.js": "./detail.js?v=18",
-        "./covers.js": "./covers.js?v=18",
-        "./zine-mesh.js": "./zine-mesh.js?v=18",
-        "./wheel-steps.js": "./wheel-steps.js?v=18",
-        "./trail.js": "./trail.js?v=18",
-        "./gallery.js": "./gallery.js?v=18"
+        "./hero.js": "./hero.js?v=20",
+        "./detail.js": "./detail.js?v=20",
+        "./covers.js": "./covers.js?v=20",
+        "./zine-mesh.js": "./zine-mesh.js?v=20",
+        "./wheel-steps.js": "./wheel-steps.js?v=20",
+        "./trail.js": "./trail.js?v=20",
+        "./gallery.js": "./gallery.js?v=20"
       }
     }
   </script>
@@ -181,7 +181,7 @@
     .meta__value { text-align: right; }
     .meta__value span { display: block; }
 
-    /* masked line animation (meta + notes) */
+    /* masked line animation (issue details) */
     .mask { overflow: hidden; display: block; }
     .line { display: block; transform: translateY(0); transition: transform .6s var(--ease-out); transition-delay: calc(var(--i, 0) * 40ms); }
     .rule {
@@ -194,9 +194,6 @@
     .swap.is-pre .line { transform: translateY(105%); transition: none; }
     .swap.is-pre .rule { transform: scaleX(0); transition: none; }
 
-    /* notes (bottom right) */
-    .notes { position: absolute; right: 14px; bottom: 14px; width: clamp(200px, 17vw, 280px); }
-    .notes .meta__row:last-child { padding-bottom: 0; }
 
     /* phones only: opens the zine in front */
     .see-more {
@@ -275,10 +272,6 @@
       .nav { gap: 14px; top: 10px; }
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
-      .notes {
-        left: 8px; right: 8px; bottom: 76px; width: auto;
-        background: var(--paper); padding: 0 8px 6px;
-      }
       .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
       html:not(.is-detail) .order-cta { display: none; }   /* home screen: "See more" instead */
       .prompt { display: none; }
@@ -570,10 +563,9 @@
 
     <div class="ui">
       <div class="meta swap" id="meta"></div>
-      <div class="notes swap" id="notes"></div>
-      <p class="prompt">Scroll, drag or use ← → to browse</p>
+        <p class="prompt">Scroll, drag or use ← → to browse</p>
       <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
-      <button class="see-more" id="see-more" type="button">See more</button>
+      <button class="see-more" id="see-more" type="button">Peep this</button>
     </div>
   </section>
 
@@ -639,9 +631,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=18"></script>
+  <script src="zines.js?v=20"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=18"></script>
+  <script src="order.js?v=20"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -650,6 +642,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=18"></script>
+  <script type="module" src="hero.js?v=20"></script>
 </body>
 </html>
