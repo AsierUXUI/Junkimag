@@ -43,6 +43,7 @@ const CONFIG = {
   wheelMinStepTick: 90, wheelMinStepFlick: 190, wheelSustainDelay: 480, wheelSustainRatio: 0.8,
   // touch
   touchFlickVelocity: 0.35, touchLeadMaxHeight: 0.6,
+  mobileDrop: 0.08,      // phones: how far the row sits below the middle (× screen height)
   // intro
   preloadSpin: 1.1, preloadRiseFrom: 3, preloadRiseDepth: 0.7, preloadFanDuration: 1.15, preloadStagger: 0.07,
   // opening a zine: the others drop back out of view, the chosen one moves into the detail hero
@@ -76,7 +77,7 @@ const easePow2Out = t => 1 - (1 - t) * (1 - t);
 
 const $ = id => document.getElementById(id);
 const hero = $('hero'), glCanvas = $('gl'), scribbleCanvas = $('scribble');
-const metaEl = $('meta'), notesEl = $('notes'), liveEl = $('live');
+const metaEl = $('meta'), liveEl = $('live');
 const pill = $('cursor-pill'), pillText = $('cursor-pill-text');
 const badgeEl = $('badge'), shapeEl = $('shape');
 const preloader = $('preloader'), preloaderCount = $('preloader-count');
@@ -207,12 +208,15 @@ function init() {
     const narrow = camera.aspect < 0.9;
     if (narrow) {
       const s = Math.min(CONFIG.touchLeadMaxHeight * visH / ZH, 0.62 * visW / ZW);
-      layout = { rotX: -14, rotY: -16, scale: s, gap: ZW * 1.08, narrow };
+      // taller phones have more room under the row, so it drops a bit further toward the button
+      const drop = clamp(CONFIG.mobileDrop + (1 / camera.aspect - 2) * 0.2, 0.04, 0.15);
+      layout = { rotX: -14, rotY: -16, scale: s, gap: ZW * 1.08, narrow, drop: drop * visH };
     } else {
       const s = Math.min(CONFIG.galleryScale, 0.68 * visH / ZH);
       layout = { rotX: CONFIG.galleryRotX, rotY: CONFIG.galleryRotY, scale: s, gap: CONFIG.hGap, narrow };
     }
     gallery.rotation.set(layout.rotX * DEG, layout.rotY * DEG, 0);
+    gallery.position.y = -(layout.drop || 0);
     gallery.scale.setScalar(layout.scale);
     dirty = true;
   }
@@ -591,7 +595,7 @@ function init() {
     const first = shownIndex < 0;
     const done = () => { shownIndex = index; swapping = false; announce(index); };
     if (first || reduce) { renderMeta(index, !reduce && first); done(); return; }
-    metaEl.classList.add('is-out'); notesEl.classList.add('is-out');
+    metaEl.classList.add('is-out');
     setTimeout(() => { renderMeta(index, true); done(); }, 360);
   }
 
@@ -892,25 +896,20 @@ function rowsHTML(rows, startI) {
 
 function renderMeta(index, animate) {
   const z = ZINES[index]; if (!z) return;
+  // one table, desktop and phones: contributors live on the zine's own page
   metaEl.innerHTML =
     `<h2 class="meta__title"><span class="mask"><span class="line" style="--i:0">${esc(z.title)}</span></span></h2>` +
     rowsHTML([
       ['Issue', z.issue || '—'],
       ['Year', z.year || '—'],
-      z.contents ? ['Includes', z.contents] : ['Contributors', (z.contributors && z.contributors.length) ? z.contributors : '—'],
+      ['Format', z.kind === 'set' ? 'Slipcase' : 'A5, stapled'],
+      ['Price', window.junkiPrice(z) || '—'],
     ], 1);
-  notesEl.innerHTML = rowsHTML([
-    ['Format', z.kind === 'set' ? 'Slipcase' : 'A5, stapled'],
-    ['Price', window.junkiPrice(z) || '—'],
-    ['Tip', coarse ? 'Swipe to browse' : 'Drag to flip'],
-  ], 2);
-  for (const el of [metaEl, notesEl]) {
-    el.classList.remove('is-out');
-    if (animate) {
-      el.classList.add('is-pre');
-      void el.offsetWidth; // apply the start state before animating in
-      el.classList.remove('is-pre');
-    }
+  metaEl.classList.remove('is-out');
+  if (animate) {
+    metaEl.classList.add('is-pre');
+    void metaEl.offsetWidth; // apply the start state before animating in
+    metaEl.classList.remove('is-pre');
   }
 }
 
