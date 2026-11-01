@@ -6,10 +6,12 @@
 
 (function () {
   // ── Settings: change these ───────────────────────────────────────────
-  var POSTAGE = 2.5;   // placeholder flat postage per order, in euros. 0 = free.
+  var POSTAGE = 2.5;       // placeholder flat postage per order, in euros. 0 = free.
+  var POSTAGE_DKK = 19;    // the same postage in Danish kroner
   var PAYMENT_METHODS = ['Bizum', 'Bank transfer', 'PayPal'];
   var PICKUP_NOTE = "We'll email you to arrange a time and place.";   // placeholder
   var MAX_QTY = 10;
+  var CONTACT_EMAIL = 'junkimagazine@comic.com';   // shown if an order fails to send
 
   // ── EmailJS setup ────────────────────────────────────────────────────
   // 1. Create a free account at https://emailjs.com
@@ -33,8 +35,13 @@
   // ─────────────────────────────────────────────────────────────────────
 
   var ZINES = window.JUNKI_ZINES || [];
-  var price = function (z) { var n = parseFloat(String(z && z.price || '').replace(/[^0-9.,]/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
-  var money = function (n) { return '€' + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, ''); };
+  var num = function (v) { var n = parseFloat(String(v || '').replace(/[^0-9.,]/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
+  var price = function (z) { return num(z && z.price); };
+  var priceDkk = function (z) { return num(z && z.priceDkk); };
+  var eur = function (n) { return '€' + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, ''); };
+  var dkk = function (n) { return Math.round(n) + ' kr'; };
+  // both currencies, e.g. "€12.50 / 93 kr"
+  var money = function (e, k) { return eur(e) + ' / ' + dkk(k); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 
   var css = `
@@ -96,7 +103,7 @@
   `;
 
   function optionsHTML() {
-    return ZINES.map(function (z) { return '<option value="' + esc(z.slug) + '">' + esc(z.title) + (z.price ? ' · ' + esc(z.price) : '') + '</option>'; }).join('');
+    return ZINES.map(function (z) { return '<option value="' + esc(z.slug) + '">' + esc(z.title) + (z.price ? ' · ' + esc(window.junkiPrice(z)) : '') + '</option>'; }).join('');
   }
   function radios(name, items) {
     return items.map(function (it, i) {
@@ -123,7 +130,7 @@
           <fieldset>
             <legend>Delivery</legend>
             <div class="choices">${radios('delivery', [
-              { value: 'Post', label: 'Post', hint: POSTAGE ? '+ ' + money(POSTAGE) + ' postage' : 'Free postage' },
+              { value: 'Post', label: 'Post', hint: POSTAGE ? '+ ' + money(POSTAGE, POSTAGE_DKK) + ' postage' : 'Free postage' },
               { value: 'Pick up', label: 'Pick up', hint: 'Free' },
             ])}</div>
             <div class="when-post">
@@ -187,16 +194,18 @@
     var z = ZINES.find(function (x) { return x.slug === form.issue_slug.value; }) || ZINES[0];
     var qty = Math.max(1, Math.min(MAX_QTY, parseInt(form.quantity.value, 10) || 1));
     var delivery = (form.querySelector('input[name=delivery]:checked') || {}).value || 'Post';
-    var postage = delivery === 'Post' ? POSTAGE : 0;
-    var subtotal = price(z) * qty;
-    return { zine: z, qty: qty, delivery: delivery, postage: postage, subtotal: subtotal, total: subtotal + postage,
+    var post = delivery === 'Post';
+    var postage = post ? POSTAGE : 0, postageDkk = post ? POSTAGE_DKK : 0;
+    var subtotal = price(z) * qty, subtotalDkk = priceDkk(z) * qty;
+    return { zine: z, qty: qty, delivery: delivery, postage: postage, postageDkk: postageDkk,
+      subtotal: subtotal, subtotalDkk: subtotalDkk, total: subtotal + postage, totalDkk: subtotalDkk + postageDkk,
       payment: (form.querySelector('input[name=payment_method]:checked') || {}).value || '' };
   }
 
   function summaryHTML(o) {
-    return '<div><span>' + o.qty + ' × ' + esc(o.zine.title) + '</span><span>' + money(o.subtotal) + '</span></div>' +
-      '<div><span>' + (o.delivery === 'Post' ? 'Postage' : 'Pick up') + '</span><span>' + (o.postage ? money(o.postage) : 'Free') + '</span></div>' +
-      '<div class="total"><span>Total</span><span>' + money(o.total) + '</span></div>';
+    return '<div><span>' + o.qty + ' × ' + esc(o.zine.title) + '</span><span>' + money(o.subtotal, o.subtotalDkk) + '</span></div>' +
+      '<div><span>' + (o.delivery === 'Post' ? 'Postage' : 'Pick up') + '</span><span>' + (o.postage ? money(o.postage, o.postageDkk) : 'Free') + '</span></div>' +
+      '<div class="total"><span>Total</span><span>' + money(o.total, o.totalDkk) + '</span></div>';
   }
 
   function update() {
@@ -233,8 +242,8 @@
     update();
     if (!form.checkValidity()) { form.reportValidity(); return; }
     var o = read();
-    var summary = o.qty + ' × ' + o.zine.title + ' (' + money(o.subtotal) + ')' +
-      (o.delivery === 'Post' ? ', postage ' + (o.postage ? money(o.postage) : 'free') : ', pick up') + '. Total ' + money(o.total) + '.';
+    var summary = o.qty + ' × ' + o.zine.title + ' (' + money(o.subtotal, o.subtotalDkk) + ')' +
+      (o.delivery === 'Post' ? ', postage ' + (o.postage ? money(o.postage, o.postageDkk) : 'free') : ', pick up') + '. Total ' + money(o.total, o.totalDkk) + '.';
     var params = {
       customer_name: form.customer_name.value.trim(),
       customer_email: form.customer_email.value.trim(),
@@ -245,7 +254,7 @@
       payment_method: o.payment,
       notes: form.notes.value.trim() || '—',
       order_summary: summary,
-      total: money(o.total),
+      total: money(o.total, o.totalDkk),
     };
     submit.disabled = true; submit.textContent = 'Sending…'; status.hidden = true;
     try {
@@ -259,7 +268,7 @@
       doneEl.querySelector('.done-close').focus();
     } catch (err) {
       status.hidden = false;
-      status.textContent = "Sorry, the order didn't go through. Please try again, or email us directly.";
+      status.textContent = "Sorry, the order didn't go through. Please try again, or email us at " + CONTACT_EMAIL + '.';
       console.error(err);
     } finally {
       submit.disabled = false; submit.textContent = 'Send order';

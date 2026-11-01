@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Catalog — Junki Magazine</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="img/icon-512.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -168,7 +171,7 @@
           '<p>' + zine.description + '</p>' +
         '</div>' +
         '<div class="card-footer">' +
-          '<span class="price">' + zine.price + '</span>' +
+          '<span class="price">' + window.junkiPrice(zine) + '</span>' +
           '<button data-issue="' + zine.title + '" data-slug="' + zine.slug + '">Buy</button>' +
         '</div>';
       grid.appendChild(card);
