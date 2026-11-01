@@ -39,7 +39,7 @@
 
     /* header: same as the home page */
     .nav {
-      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 10;
       display: flex; align-items: center; gap: 22px;
     }
     .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); }
@@ -52,7 +52,7 @@
       margin-left: -1.5px; border-radius: 50%; background: var(--ink);
     }
     .order-cta {
-      position: absolute; top: 18px; right: 18px; text-decoration: none;
+      position: absolute; top: 18px; right: 18px; text-decoration: none; z-index: 10;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
       border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
       transition: background .25s, color .25s;
@@ -78,11 +78,6 @@
       mask-position: center top, 0 0;
       mask-repeat: repeat, no-repeat;
       mask-composite: intersect;
-    }
-    .about-art__credit {
-      position: absolute; right: 18px; top: min(62vh, 620px); z-index: 1;
-      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
-      background: var(--paper); padding: 4px 8px;
     }
     /* keep the heading and intro crisp over the drawing */
     h1, .lead { position: relative; }
@@ -117,7 +112,6 @@
     a.value:hover, a.value:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
     @media (max-width: 600px) {
-      .about-art__credit { top: 64px; right: 16px; }
       .nav { gap: 14px; top: 10px; }
       .order-cta { top: auto; bottom: 16px; position: fixed; }
     }
@@ -134,7 +128,6 @@
   <a class="order-cta" href="catalog.html">Order ↗</a>
 
   <div class="about-art" aria-hidden="true"></div>
-  <p class="about-art__credit">Drawing: Jonas Kleis</p>
 
   <main>
 

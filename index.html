@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=13",
-        "./detail.js": "./detail.js?v=13",
-        "./covers.js": "./covers.js?v=13",
-        "./zine-mesh.js": "./zine-mesh.js?v=13",
-        "./wheel-steps.js": "./wheel-steps.js?v=13",
-        "./trail.js": "./trail.js?v=13",
-        "./gallery.js": "./gallery.js?v=13"
+        "./hero.js": "./hero.js?v=14",
+        "./detail.js": "./detail.js?v=14",
+        "./covers.js": "./covers.js?v=14",
+        "./zine-mesh.js": "./zine-mesh.js?v=14",
+        "./wheel-steps.js": "./wheel-steps.js?v=14",
+        "./trail.js": "./trail.js?v=14",
+        "./gallery.js": "./gallery.js?v=14"
       }
     }
   </script>
@@ -452,7 +452,6 @@
       mask: url(img/jonas-drawing.webp) center top / min(1400px, 160vw) auto repeat;
     }
     .site-footer > * { position: relative; }
-    .site-footer__credit { margin-top: 10px; opacity: .7; }
     .site-footer__cols { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
     .site-footer__links { display: flex; flex-direction: column; gap: 6px; font-family: var(--display); font-size: 32px; letter-spacing: -0.03em; }
     .site-footer__links a { text-decoration: none; }
@@ -590,7 +589,6 @@
           <p class="label">Contact</p>
           <p><a href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></p>
           <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram @junkimag ↗</a></p>
-          <p class="label site-footer__credit">Drawing: Jonas Kleis</p>
         </div>
       </div>
       <div class="site-footer__logo" role="img" aria-label="Junki Magazine"></div>
@@ -600,9 +598,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=13"></script>
+  <script src="zines.js?v=14"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=13"></script>
+  <script src="order.js?v=14"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -611,6 +609,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=13"></script>
+  <script type="module" src="hero.js?v=14"></script>
 </body>
 </html>
