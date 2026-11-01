@@ -24,6 +24,9 @@
       --pink: #FF48B0;
       --blue: #0078BF;
       --cream: #F7F3EA;
+      --hair: rgba(17, 17, 17, 0.18);
+      --tint: #F7DCEB;
+      --gutter: 30px;
       --ease-io: cubic-bezier(0.645, 0.045, 0.355, 1);
       --ease-in: cubic-bezier(0.55, 0, 0.75, 0.15);   /* ≈ power3.in */
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* ≈ power4.out / expo.out */
@@ -37,6 +40,11 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; }
+    html.is-detail, html.is-detail body { height: auto; overflow: visible; }
+    html.is-detail body { overflow-x: hidden; }
+    html.lenis, html.lenis body { height: auto; }
+    html:not(.is-detail).lenis, html:not(.is-detail).lenis body { height: 100%; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
     body {
       background: var(--paper);
       color: var(--ink);
@@ -58,17 +66,26 @@
 
     /* ── Hero ── */
     .hero {
-      position: relative; width: 100%; height: 100vh; height: 100dvh;
+      position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh;
       overflow: hidden; touch-action: none; outline: none;
       user-select: none; -webkit-user-select: none;
     }
     .hero.is-hovering { cursor: pointer; }
     .hero.is-grabbing { cursor: grabbing; }
-    .hero__gl, .hero__scribble {
+    .hero__scribble {
       position: absolute; inset: 0; width: 100%; height: 100%;
       background: transparent; pointer-events: none;
     }
-    .hero__gl { z-index: 2; }
+    /* one 3D canvas for both views; the zine moves from the carousel into the detail view */
+    .stage-gl {
+      position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh;
+      background: transparent; pointer-events: none; z-index: 2;
+    }
+    /* detail view: the carousel's own layers step back */
+    .shape-layer, .hero__scribble, .ui { transition: opacity .5s var(--ease-io); }
+    .is-detail .hero { pointer-events: none; }
+    .is-detail .hero * { pointer-events: none !important; }
+    .is-detail .shape-layer, .is-detail .hero__scribble, .is-detail .ui { opacity: 0; }
     .hero__scribble { z-index: 3; }
 
     /* back layer: riso-blue hill + rotating circular text */
@@ -95,11 +112,14 @@
     .ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
     .ui a, .ui button { pointer-events: auto; }
 
+    .site-header { position: fixed; top: 0; left: 0; right: 0; height: 0; z-index: 40; }
+    html[data-preload] .site-header { opacity: 0; }
+    .site-header { transition: opacity .6s var(--ease-io); }
     .nav {
       position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
       display: flex; align-items: center; gap: 22px;
     }
-    .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); }
+    .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); transform-origin: 50% 0; transform: scale(var(--logo-s, 1)); transition: transform .2s linear; }
     .nav__logo img { height: 100%; width: auto; display: block; }
     .nav__link {
       position: relative; text-decoration: none; color: var(--muted); white-space: nowrap;
@@ -112,7 +132,7 @@
       margin-left: -1.5px; border-radius: 50%; background: var(--ink);
     }
     .order-cta {
-      position: absolute; top: 18px; right: 18px; text-decoration: none;
+      position: absolute; top: 18px; right: 18px; text-decoration: none; cursor: pointer; color: var(--ink); background: var(--paper);
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
       border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
       transition: background .25s var(--ease-io), color .25s var(--ease-io);
@@ -218,10 +238,170 @@
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
       .notes { left: 16px; right: 16px; bottom: 56px; width: auto; }
-      .order-cta { top: auto; bottom: 16px; right: 16px; }
+      .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
       .prompt { display: none; }
       .shape-layer__shape { width: 150vw; top: 62%; }
       .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
+    }
+
+
+    /* ════════ Zine detail view ════════ */
+    .container { padding: 0 var(--gutter); }
+    .label {
+      font-family: var(--label); font-size: 11px; line-height: 1.3; letter-spacing: .2em; text-transform: uppercase;
+    }
+
+    /* ── Text reveal (chars / lines in masks) ── */
+    .rvl-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-block: 0.14em; margin-block: -0.14em; }
+    .rvl-line-mask { display: block; overflow: hidden; padding-block: 0.12em; margin-block: -0.12em; }
+    .rvl-word { display: inline-block; white-space: nowrap; }
+    .rvl-unit { display: inline-block; transform: translateY(108%); will-change: transform; }
+    .rvl-line-mask > .rvl-unit { display: block; }
+    .is-revealed .rvl-unit { transform: translateY(0); transition: transform 1.2s var(--ease-out); transition-delay: calc(var(--d, 0) * 1ms); }
+    [data-reveal]:not(.is-split) { visibility: hidden; }
+    .no-js [data-reveal], .reduced [data-reveal] { visibility: visible; }
+    .reduced .rvl-unit { transform: none; }
+
+    /* ── Hero ── */
+    .zhero { position: relative; }
+    #detail { display: none; position: relative; }
+    .is-detail #detail { display: block; animation: detail-in .5s var(--ease-io); }
+    @keyframes detail-in { from { opacity: 0; } }
+    .zhero__stage { position: relative; height: 100vh; height: 100svh; }
+    .zhero__title {
+      position: absolute; left: 50%; top: 43%; width: 95vw; z-index: 1;
+      transform: translate(-50%, calc(-50% + var(--title-y, 0px)));
+      font-family: var(--display); font-weight: 800; font-size: 12.46vw; line-height: 0.9; letter-spacing: -0.04em;
+      text-transform: uppercase; text-align: center; color: var(--pink); text-wrap: balance;
+    }
+    .zhero__meta {
+      position: absolute; left: 0; right: 0; top: 80%; z-index: 1;
+      display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 0;
+      font-family: var(--display); font-weight: 500; font-size: 2.38vw; line-height: 1.1; letter-spacing: -0.03em;
+    }
+    .zhero__meta-left { grid-column: 2 / span 3; text-decoration: none; }
+    .zhero__meta-left:hover .rvl-unit { text-decoration: underline; text-underline-offset: .12em; text-decoration-thickness: 2px; }
+    .zhero__meta-right { grid-column: 8 / span 4; text-align: right; }
+    /* ── Intro ── */
+    .intro { padding: 330px 0 120px; position: relative; z-index: 3; }
+    .intro__inner { width: calc(10 / 12 * 100%); margin: 0 auto; text-align: center; }
+    .rhombus { display: block; width: 13px; height: 13px; margin: 0 auto; background: var(--ink); transform: rotate(45deg) scale(0); transition: transform .6s cubic-bezier(0.34, 1.9, 0.64, 1); }
+    .is-revealed > .rhombus, .rhombus.is-revealed { transform: rotate(45deg) scale(1); }
+    .reduced .rhombus { transform: rotate(45deg); }
+    .intro__text { font-size: 2.38vw; line-height: 1.3; letter-spacing: -0.035em; margin: 60px 0; }
+
+    /* ── Meta table ── */
+    .zmeta { position: relative; z-index: 3; padding-bottom: 120px; }
+    .zmeta__table {
+      position: relative; width: calc(8 / 12 * 100%); margin: 0 auto;
+      display: grid; grid-template-columns: 477fr 238fr 133fr;
+    }
+    .zmeta__rule { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hair); transform-origin: left; transform: scaleX(0); transition: transform .9s cubic-bezier(0.22, 1, 0.36, 1); }
+    .zmeta__col { position: relative; padding: 28px 20px 0; }
+    .zmeta__col:first-child { padding-left: 0; }
+    .zmeta__col + .zmeta__col::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--hair);
+      transform-origin: top; transform: scaleY(0); transition: transform .9s cubic-bezier(0.22, 1, 0.36, 1) .15s;
+    }
+    .zmeta.is-revealed .zmeta__rule { transform: scaleX(1); }
+    .zmeta.is-revealed .zmeta__col + .zmeta__col::before { transform: scaleY(1); }
+    .reduced .zmeta__rule, .reduced .zmeta__col + .zmeta__col::before { transform: none; }
+    .zmeta__label { color: var(--pink); margin-bottom: 10px; filter: brightness(.85); }
+    .zmeta__value { font-size: 1.46vw; line-height: 1.3; letter-spacing: -0.03em; }
+    .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .chip {
+      width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(17,17,17,.25);
+      display: grid; place-items: center; font-size: 13px; font-weight: 500;
+    }
+    .zmeta__cta { display: flex; justify-content: center; margin-top: 72px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 12px; text-decoration: none; cursor: pointer;
+      font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--paper); background: var(--ink); border: 1px solid var(--ink); border-radius: 500px; padding: 16px 26px;
+      transition: background .3s var(--ease-io), color .3s var(--ease-io);
+    }
+    .btn::before { content: ''; width: 7px; height: 7px; background: var(--pink); transform: rotate(45deg); }
+    .btn:hover, .btn:focus-visible { background: var(--pink); color: var(--ink); }
+    .btn:hover::before, .btn:focus-visible::before { background: var(--ink); }
+
+    /* ── Photo slider ── */
+    .slider { position: relative; height: 43.7vw; overflow: hidden; touch-action: pan-y; cursor: grab; user-select: none; margin-bottom: 160px; }
+    .slider.is-dragging { cursor: grabbing; }
+    .slide {
+      position: absolute; top: 0; left: 50%; width: 61vw; height: 43.7vw; margin-left: -30.5vw;
+      border-radius: 15px; overflow: hidden; background: var(--tint); will-change: transform;
+    }
+    .slide__img { position: absolute; top: 0; left: 50%; height: 100%; width: 132%; margin-left: -66%; object-fit: cover; will-change: transform; pointer-events: none; }
+
+    /* ── Other issues ── */
+    .others { padding-bottom: 160px; }
+    .others__title {
+      font-family: var(--display); font-weight: 800; font-size: 9.1vw; line-height: 1; letter-spacing: -0.04em;
+      text-transform: uppercase; text-align: center; color: var(--pink); margin-bottom: 64px; text-wrap: balance;
+    }
+    .others__row {
+      display: flex; gap: 15px; overflow-x: auto; padding: 12px var(--gutter) 24px; scrollbar-width: none;
+      cursor: grab; scroll-snap-type: x proximity;
+    }
+    .others__row::-webkit-scrollbar { display: none; }
+    .others__row.is-dragging { cursor: grabbing; scroll-snap-type: none; }
+    .card {
+      --card-bg: color-mix(in srgb, var(--ink-a) 14%, var(--paper));
+      --card-hover: color-mix(in srgb, var(--ink-a) 34%, var(--paper));
+      position: relative; flex: none; width: 309px; height: 404px; border-radius: 12px; overflow: hidden;
+      background: var(--card-bg); text-decoration: none; scroll-snap-align: start;
+      transition: background-color .5s var(--ease-io), transform .5s var(--ease-io);
+    }
+    .card__cover {
+      position: absolute; left: 50%; top: 52%; width: 46%; transform: translate(-50%, -50%) rotate(0deg);
+      box-shadow: 0 10px 22px rgba(0,0,0,.14); transition: transform .5s var(--ease-io);
+    }
+    .card__name { position: absolute; left: 16px; top: 14px; right: 16px; display: flex; justify-content: space-between; gap: 8px; }
+    .card__name strong { font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -0.03em; text-transform: uppercase; }
+    .card__pill {
+      position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 12px); opacity: 0; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 500px; padding: 8px 11px;
+      font-family: var(--label); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      transition: transform .5s var(--ease-io), opacity .5s var(--ease-io);
+    }
+    .card__pill::before { content: ''; width: 6px; height: 6px; background: var(--pink); transform: rotate(45deg); }
+    .card:hover, .card:focus-visible { background: var(--card-hover); transform: rotate(-2.5deg) translateY(-4px); }
+    .card:hover .card__cover, .card:focus-visible .card__cover { transform: translate(-50%, -50%) rotate(4deg); }
+    .card:hover .card__pill, .card:focus-visible .card__pill { opacity: 1; transform: translate(-50%, 0); }
+
+    /* ── Footer ── */
+    .site-footer { position: relative; background: var(--blue); color: var(--cream); overflow: hidden; padding: 72px var(--gutter) 0; }
+    .site-footer__cols { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+    .site-footer__links { display: flex; flex-direction: column; gap: 6px; font-family: var(--display); font-size: 32px; letter-spacing: -0.03em; }
+    .site-footer__links a { text-decoration: none; }
+    .site-footer__links a:hover { color: var(--pink); }
+    .site-footer__contact { text-align: right; }
+    .site-footer__word {
+      font-family: var(--display); font-weight: 800; font-size: 31vw; line-height: 0.78; letter-spacing: -0.06em;
+      color: var(--pink); text-align: center; margin: 80px 0 -4vw; white-space: nowrap;
+    }
+
+    /* ── Phones ── */
+    @media (max-width: 767px) {
+      :root { --gutter: 16px; }
+      .zhero__title { font-size: 16vw; top: 46%; }
+      .zhero__meta { top: 92px; font-size: 18px; grid-template-columns: 1fr 1fr; padding: 0 var(--gutter); }
+      .zhero__meta-left { grid-column: 1; }
+      .zhero__meta-right { grid-column: 2; }
+      .intro { padding: 70vw 0 80px; }
+      .intro__inner { width: auto; padding: 0 var(--gutter); }
+      .intro__text { font-size: 22px; margin: 40px 0; }
+      .zmeta__table { width: auto; margin: 0 var(--gutter); grid-template-columns: 1fr; }
+      .zmeta__col { padding: 20px 0; }
+      .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
+      .zmeta.is-revealed .zmeta__col + .zmeta__col::before { transform: scaleX(1); }
+      .zmeta__value { font-size: 18px; }
+      .slider { height: 61vw; margin-bottom: 100px; }
+      .slide { width: 85vw; height: 61vw; margin-left: -42.5vw; }
+      .others__title { font-size: 14vw; margin-bottom: 36px; }
+      .card { width: 70vw; height: calc(70vw * 1.31); }
+      .site-footer__links { font-size: 24px; }
+      .site-footer__contact { text-align: left; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -236,6 +416,17 @@
     <div class="preloader__panel"></div>
   </div>
 
+  <header class="site-header">
+    <nav class="nav" aria-label="Main">
+      <a class="nav__logo" href="index.html" data-home aria-label="Junki Magazine, home">
+        <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
+      </a>
+      <a class="nav__link is-active" href="index.html" data-home aria-current="page">Zines</a>
+      <a class="nav__link" href="about.html">About us</a>
+    </nav>
+    <button class="order-cta" id="order-cta" type="button">Order ↗</button>
+  </header>
+
   <section class="hero" id="hero" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Junki zines. Use the left and right arrow keys to browse, Enter to open the zine in front.">
     <h1 class="sr-only">Junki Magazine</h1>
 
@@ -249,31 +440,76 @@
       </svg>
     </div>
 
-    <canvas class="hero__gl" id="gl"></canvas>
     <canvas class="hero__scribble" id="scribble"></canvas>
     <div class="fallback" id="fallback"></div>
 
     <div class="ui">
-      <nav class="nav" aria-label="Main">
-        <a class="nav__logo" href="index.html" aria-label="Junki Magazine, home">
-          <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
-        </a>
-        <a class="nav__link is-active" href="index.html" aria-current="page">Zines</a>
-        <a class="nav__link" href="about.html">About us</a>
-      </nav>
-
-      <a class="order-cta" id="order-cta" href="catalog.html">Order ↗</a>
-
       <div class="meta swap" id="meta"></div>
       <div class="notes swap" id="notes"></div>
       <p class="prompt">Scroll, drag or use ← → to browse</p>
     </div>
   </section>
 
+  <canvas class="stage-gl" id="gl" aria-hidden="true"></canvas>
+
+  <!-- Zine detail view (index.html?zine=<slug>). Filled in by detail.js. -->
+  <div id="detail" aria-hidden="true">
+    <section class="zhero" aria-labelledby="zine-title">
+      <div class="zhero__stage" id="stage">
+        <h1 class="zhero__title" id="zine-title" data-reveal="chars"></h1>
+        <div class="zhero__meta">
+          <a class="zhero__meta-left" href="index.html" data-home data-reveal="lines" data-delay="180" id="hero-left">All<br>zines</a>
+          <p class="zhero__meta-right" data-reveal="lines" data-delay="260" id="hero-right"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="intro" aria-label="About this issue">
+      <div class="intro__inner">
+        <span class="rhombus" data-reveal-self></span>
+        <p class="intro__text" id="intro-text" data-reveal="lines"></p>
+        <span class="rhombus" data-reveal-self></span>
+      </div>
+    </section>
+
+    <section class="zmeta" id="zmeta" data-reveal-self aria-label="Details">
+      <div class="zmeta__table" id="zmeta-table"></div>
+      <div class="zmeta__cta"><button class="btn" type="button" id="order-btn">Order a copy</button></div>
+    </section>
+
+    <section aria-label="Inside the issue">
+      <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Pages from this issue"></div>
+    </section>
+
+    <section class="others" aria-labelledby="others-title">
+      <h2 class="others__title" id="others-title" data-reveal="chars">Other issues</h2>
+      <div class="others__row" id="others-row"></div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="site-footer__cols">
+        <nav class="site-footer__links" aria-label="Footer">
+          <a href="index.html" data-home>Zines</a>
+          <a href="about.html">About us</a>
+        </nav>
+        <div class="site-footer__contact">
+          <p class="label">Contact</p>
+          <!-- Placeholder: replace with the real contact details -->
+          <p>Placeholder email</p>
+          <p>Placeholder Instagram</p>
+        </div>
+      </div>
+      <p class="site-footer__word" data-reveal="chars" aria-hidden="true">JUNKI</p>
+    </footer>
+  </div>
+
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
   <script src="zines.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="order.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
     setTimeout(function () {
