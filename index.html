@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=15",
-        "./detail.js": "./detail.js?v=15",
-        "./covers.js": "./covers.js?v=15",
-        "./zine-mesh.js": "./zine-mesh.js?v=15",
-        "./wheel-steps.js": "./wheel-steps.js?v=15",
-        "./trail.js": "./trail.js?v=15",
-        "./gallery.js": "./gallery.js?v=15"
+        "./hero.js": "./hero.js?v=16",
+        "./detail.js": "./detail.js?v=16",
+        "./covers.js": "./covers.js?v=16",
+        "./zine-mesh.js": "./zine-mesh.js?v=16",
+        "./wheel-steps.js": "./wheel-steps.js?v=16",
+        "./trail.js": "./trail.js?v=16",
+        "./gallery.js": "./gallery.js?v=16"
       }
     }
   </script>
@@ -122,7 +122,8 @@
     }
 
     /* ── UI layer ── */
-    .ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+    .ui { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+    .is-detail .ui, .is-detail .ui * { pointer-events: none !important; }
     .ui a, .ui button { pointer-events: auto; }
 
     .site-header { position: fixed; top: 0; left: 0; right: 0; height: 0; z-index: 40; }
@@ -183,7 +184,11 @@
     .swap.is-pre .rule { transform: scaleX(0); transition: none; }
 
     /* notes (bottom right) */
-    .notes { position: absolute; right: 14px; bottom: 14px; width: clamp(200px, 17vw, 280px); }
+    /* format / price / tip: top right on desktop, under the Order button, mirroring the issue details */
+    .notes {
+      position: absolute; right: 14px; top: 64px; width: clamp(220px, 19vw, 300px);
+      background: color-mix(in srgb, var(--paper) 88%, transparent); padding: 0 8px 6px; margin-right: -8px;
+    }
     .notes .meta__row:last-child { padding-bottom: 0; }
 
     .social {
@@ -197,7 +202,7 @@
       color: var(--cream); white-space: nowrap;
       transition: opacity .9s var(--ease-io) .18s, transform .9s var(--ease-io) .18s;
     }
-    .is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
+    .is-ready .prompt, .ui.is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
 
     /* UI hidden until the intro runs */
     html[data-preload] .ui, html[data-preload] .shape-layer { opacity: 0; }
@@ -255,7 +260,7 @@
       .nav { gap: 14px; top: 10px; }
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
-      .notes { left: 16px; right: 16px; bottom: 56px; width: auto; }
+      .notes { left: 16px; right: 16px; top: auto; bottom: 56px; width: auto; background: none; padding: 0; margin: 0; }
       .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
       .prompt { display: none; }
       .social { left: 16px; bottom: 22px; }
@@ -530,15 +535,17 @@
     <canvas class="hero__scribble" id="scribble"></canvas>
     <div class="fallback" id="fallback"></div>
 
-    <div class="ui">
-      <div class="meta swap" id="meta"></div>
-      <div class="notes swap" id="notes"></div>
-      <p class="prompt">Scroll, drag or use ← → to browse</p>
-      <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
-    </div>
   </section>
 
   <canvas class="stage-gl" id="gl" aria-hidden="true"></canvas>
+
+  <!-- home page text (issue details, notes, prompt): its own layer above the 3D zines -->
+  <div class="ui" id="home-ui">
+    <div class="meta swap" id="meta"></div>
+    <div class="notes swap" id="notes"></div>
+    <p class="prompt">Scroll, drag or use ← → to browse</p>
+    <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
+  </div>
 
   <!-- Zine detail view (index.html?zine=<slug>). Filled in by detail.js. -->
   <div id="detail" aria-hidden="true">
@@ -600,9 +607,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=15"></script>
+  <script src="zines.js?v=16"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=15"></script>
+  <script src="order.js?v=16"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -611,6 +618,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=15"></script>
+  <script type="module" src="hero.js?v=16"></script>
 </body>
 </html>
