@@ -359,8 +359,13 @@
       padding: 0 var(--gutter); margin-bottom: 8px; position: relative; z-index: 3;
     }
     .gallery-head h2 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 3.4vw, 52px); letter-spacing: -0.04em; text-transform: uppercase; line-height: 1; }
+    .ribbon-pin { position: relative; height: 260vh; margin-bottom: 120px; z-index: 3; }
+    .ribbon-pin__sticky {
+      position: sticky; top: 0; height: 100vh; height: 100svh;
+      display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+    }
     .slider.ribbon {
-      position: relative; height: min(78vh, 62vw); margin-bottom: 140px; z-index: 3;
+      position: relative; height: min(74vh, 62vw); z-index: 3;
       touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
     }
     .slider.ribbon.is-dragging { cursor: grabbing; }
@@ -453,7 +458,8 @@
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
       .zmeta.is-revealed .zmeta__col + .zmeta__col::before { transform: scaleX(1); }
       .zmeta__value { font-size: 18px; }
-      .slider.ribbon { height: 92vw; margin-bottom: 90px; }
+      .slider.ribbon { height: 92vw; }
+      .ribbon-pin { height: 200vh; margin-bottom: 60px; }
       .lightbox__prev, .lightbox__next { top: auto; bottom: 14px; margin-top: 0; }
       .others__title { font-size: 14vw; margin-bottom: 36px; }
       .card { width: 70vw; height: calc(70vw * 1.31); }
@@ -535,12 +541,15 @@
       <div class="zmeta__cta"><button class="btn" type="button" id="order-btn">Order a copy</button></div>
     </section>
 
-    <section aria-label="Inside the issue">
-      <div class="gallery-head">
-        <h2>Inside</h2>
-        <p class="label">Drag · click a photo to enlarge</p>
+    <!-- the ribbon stays pinned while you scroll through this section; scrolling moves the photos -->
+    <section class="ribbon-pin" id="ribbon-pin" aria-label="Inside the issue">
+      <div class="ribbon-pin__sticky">
+        <div class="gallery-head">
+          <h2>Inside</h2>
+          <p class="label">Scroll or drag · click a photo to enlarge</p>
+        </div>
+        <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Photos from this issue"></div>
       </div>
-      <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Photos from this issue"></div>
     </section>
 
     <section class="others" aria-labelledby="others-title">
