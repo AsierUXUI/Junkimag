@@ -1,0 +1,27 @@
+// ── Junki zines ──────────────────────────────────────────────────────
+// One list, used by the home page hero and by the catalog.
+// Add, remove or edit entries here.
+//
+//   slug          used in links: catalog.html?zine=<slug>
+//   title         shown in the hero meta block and on the catalog card
+//   issue         printed on the cover ("Nº 01")
+//   year          leave null until known (shows "—")
+//   contributors  names, shown stacked in the hero
+//   price         shown in the hero and the catalog
+//   description   catalog card text
+//   front / back  optional image paths for real cover scans. When empty,
+//                 a riso-style placeholder cover is generated.
+//   inks          two riso ink colours for the generated cover
+//   paper         'uncoated' (matte) or 'glossy'
+//
+// Everything below is placeholder copy. Replace it with the real issues.
+window.JUNKI_ZINES = [
+  { slug: 'issue-01', title: 'Issue 01', issue: 'Nº 01', year: null, contributors: ['Contributor A', 'Contributor B'], price: '€5', description: 'Placeholder description for issue 01.', front: '', back: '', inks: ['#FF48B0', '#0078BF'], paper: 'uncoated' },
+  { slug: 'issue-02', title: 'Issue 02', issue: 'Nº 02', year: null, contributors: ['Contributor A', 'Contributor C'], price: '€5', description: 'Placeholder description for issue 02.', front: '', back: '', inks: ['#FFE800', '#FF48B0'], paper: 'uncoated' },
+  { slug: 'issue-03', title: 'Issue 03', issue: 'Nº 03', year: null, contributors: ['Contributor B'], price: '€5', description: 'Placeholder description for issue 03.', front: '', back: '', inks: ['#00A95C', '#FF6C2F'], paper: 'glossy' },
+  { slug: 'issue-04', title: 'Issue 04', issue: 'Nº 04', year: null, contributors: ['Contributor D', 'Contributor E', 'Contributor F'], price: '€5', description: 'Placeholder description for issue 04.', front: '', back: '', inks: ['#0078BF', '#FFE800'], paper: 'uncoated' },
+  { slug: 'issue-05', title: 'Issue 05', issue: 'Nº 05', year: null, contributors: ['Contributor A'], price: '€5', description: 'Placeholder description for issue 05.', front: '', back: '', inks: ['#FF6C2F', '#765BA7'], paper: 'uncoated' },
+  { slug: 'issue-06', title: 'Issue 06', issue: 'Nº 06', year: null, contributors: ['Contributor C', 'Contributor G'], price: '€5', description: 'Placeholder description for issue 06.', front: '', back: '', inks: ['#765BA7', '#00A95C'], paper: 'glossy' },
+  { slug: 'issue-07', title: 'Issue 07', issue: 'Nº 07', year: null, contributors: ['Contributor B', 'Contributor H'], price: '€5', description: 'Placeholder description for issue 07.', front: '', back: '', inks: ['#FF48B0', '#FFE800'], paper: 'uncoated' },
+  { slug: 'issue-08', title: 'Issue 08', issue: 'Nº 08', year: null, contributors: ['Contributor E'], price: '€5', description: 'Placeholder description for issue 08.', front: '', back: '', inks: ['#0078BF', '#FF6C2F'], paper: 'uncoated' },
+];

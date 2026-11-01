@@ -1,384 +1,308 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-preload>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>junkimagazine.com</title>
-  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Junki Magazine</title>
+  <meta name="description" content="Junki Magazine: zines. Scroll through the issues and order a copy.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
   <style>
+    :root {
+      --paper: #F2F0EB;
+      --ink: #111111;
+      --muted: rgba(17, 17, 17, 0.55);
+      --pink: #FF48B0;
+      --blue: #0078BF;
+      --cream: #F7F3EA;
+      --ease-io: cubic-bezier(0.645, 0.045, 0.355, 1);
+      --ease-in: cubic-bezier(0.55, 0, 0.75, 0.15);   /* ≈ power3.in */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* ≈ power4.out / expo.out */
+      --display: 'Bricolage Grotesque', 'Arial Black', sans-serif;
+      --body: 'Inter', system-ui, sans-serif;
+      --label: 'Space Mono', ui-monospace, monospace;
+      --fs-display: clamp(20px, 2.083vw, 40px);
+      --fs-body: clamp(12px, 0.9375vw, 16px);
+      --fs-label: clamp(9px, 0.6vw, 12px);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    html, body { height: 100%; overflow: hidden; }
     body {
-      background: #fff;
-      font-family: 'Comic Neue', cursive;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-weight: 500;
+      font-size: var(--fs-body);
+      line-height: 1.4;
+      letter-spacing: -0.025em;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* fine paper grain over everything */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      opacity: 0.18; mix-blend-mode: multiply;
+    }
+    a { color: inherit; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; width: 100%; height: 100vh; height: 100dvh;
+      overflow: hidden; touch-action: none; outline: none;
+      user-select: none; -webkit-user-select: none;
+    }
+    .hero.is-hovering { cursor: pointer; }
+    .hero.is-grabbing { cursor: grabbing; }
+    .hero__gl, .hero__scribble {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      background: transparent; pointer-events: none;
+    }
+    .hero__gl { z-index: 2; }
+    .hero__scribble { z-index: 3; }
+
+    /* back layer: riso-blue hill + rotating circular text */
+    .shape-layer {
+      position: absolute; left: 50%; top: 0; width: 100%; height: 100%;
+      transform: translateX(-50%); z-index: 1; pointer-events: none;
+    }
+    .shape-layer__shape {
+      position: absolute; left: 50%; top: 52%; width: 77vw; height: auto;
+      transform: translate(-50%, var(--shape-y, 0px)) scale(0.96); transform-origin: 50% 0;
+    }
+    .shape-layer__badge {
+      position: absolute; left: 50%; top: calc(52% - 6vw); width: 90vw; height: 90vw;
+      margin-left: -45vw;
+      transform: rotate(var(--badge-rot, 0deg));
+      will-change: transform;
+    }
+    .shape-layer__badge text {
+      font-family: var(--display); font-weight: 800; font-size: 82px;
+      letter-spacing: 0.01em; fill: var(--pink); text-transform: uppercase;
     }
 
-    /* Wrapper shrinks to viewport on small screens */
-    .page-wrapper {
-      width: 100%;
-      overflow-x: hidden;
+    /* ── UI layer ── */
+    .ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+    .ui a, .ui button, .ui .index__list { pointer-events: auto; }
+
+    .nav {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 22px;
+    }
+    .nav__logo { display: block; height: clamp(38px, 3.6vw, 58px); }
+    .nav__logo img { height: 100%; width: auto; display: block; }
+    .nav__link {
+      position: relative; text-decoration: none; color: var(--muted); white-space: nowrap;
+      font: inherit; background: none; border: 0; cursor: pointer; padding: 4px 0;
+    }
+    .nav__link:hover, .nav__link:focus-visible { color: var(--ink); }
+    .nav__link.is-active { color: var(--ink); }
+    .nav__link.is-active::after {
+      content: ''; position: absolute; left: 50%; bottom: -5px; width: 3px; height: 3px;
+      margin-left: -1.5px; border-radius: 50%; background: var(--ink);
+    }
+    .index { position: relative; }
+    .index__list {
+      position: absolute; top: calc(100% + 10px); left: 50%; min-width: 210px;
+      transform: translate(-50%, -6px); opacity: 0; visibility: hidden;
+      background: var(--paper); border: 1px solid var(--ink); list-style: none;
+      transition: opacity .25s var(--ease-io), transform .25s var(--ease-io), visibility 0s .25s;
+      max-height: 60vh; overflow: auto;
+    }
+    .index.is-open .index__list { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
+    .index__list button {
+      display: flex; justify-content: space-between; gap: 16px; width: 100%;
+      padding: 8px 12px; font: inherit; color: var(--ink); background: none; border: 0;
+      border-bottom: 1px solid rgba(17,17,17,.15); cursor: pointer; text-align: left;
+    }
+    .index__list li:last-child button { border-bottom: 0; }
+    .index__list button:hover, .index__list button:focus-visible { background: var(--ink); color: var(--paper); }
+    .index__list .num { font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase; align-self: center; }
+
+    .order-cta {
+      position: absolute; top: 18px; right: 18px; text-decoration: none;
+      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
+      border: 1px solid var(--ink); border-radius: 500px; padding: 8px 14px;
+      transition: background .25s var(--ease-io), color .25s var(--ease-io);
+    }
+    .order-cta:hover, .order-cta:focus-visible { background: var(--ink); color: var(--paper); }
+
+    /* meta block (top left) */
+    .meta { position: absolute; top: 14px; left: 14px; width: clamp(240px, 21vw, 340px); }
+    .meta__title {
+      font-family: var(--display); font-weight: 500; font-size: var(--fs-display);
+      line-height: 1.1; letter-spacing: -0.04em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .meta__row {
+      position: relative; display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 12px; padding: 7px 0 6px;
+    }
+    .meta__label {
+      font-family: var(--label); font-size: var(--fs-label); line-height: 1.3;
+      letter-spacing: .2em; text-transform: uppercase; padding-top: 2px;
+    }
+    .meta__value { text-align: right; }
+    .meta__value span { display: block; }
+
+    /* masked line animation (meta + notes) */
+    .mask { overflow: hidden; display: block; }
+    .line { display: block; transform: translateY(0); transition: transform .6s var(--ease-out); transition-delay: calc(var(--i, 0) * 40ms); }
+    .rule {
+      position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink);
+      transform-origin: right center; transform: scaleX(1);
+      transition: transform .6s var(--ease-out); transition-delay: calc(var(--i, 0) * 40ms);
+    }
+    .swap.is-out .line { transform: translateY(-105%); transition: transform .3s var(--ease-in); transition-delay: calc(var(--i, 0) * 30ms); }
+    .swap.is-out .rule { transform: scaleX(0); transition: transform .3s var(--ease-in); transition-delay: calc(var(--i, 0) * 30ms); }
+    .swap.is-pre .line { transform: translateY(105%); transition: none; }
+    .swap.is-pre .rule { transform: scaleX(0); transition: none; }
+
+    /* notes (bottom right) */
+    .notes { position: absolute; right: 14px; bottom: 14px; width: clamp(200px, 17vw, 280px); }
+    .notes .meta__row:last-child { padding-bottom: 0; }
+
+    .prompt {
+      position: absolute; left: 50%; bottom: 28px; transform: translate(-50%, 10px); opacity: 0;
+      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
+      color: var(--cream); white-space: nowrap;
+      transition: opacity .9s var(--ease-io) .18s, transform .9s var(--ease-io) .18s;
+    }
+    .is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
+
+    /* UI hidden until the intro runs */
+    html[data-preload] .ui, html[data-preload] .shape-layer { opacity: 0; }
+    .ui, .shape-layer { transition: opacity .6s var(--ease-io); }
+    .is-leaving .ui { opacity: 0; }
+
+    /* ── Cursor pill ── */
+    .cursor-pill {
+      position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none;
+      transform: translate(var(--x, -100px), var(--y, -100px));
+    }
+    .cursor-pill__inner {
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      background: #fff; color: var(--ink); border-radius: 500px; padding: 8px 11px;
+      font-family: var(--label); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      transform: translate(18px, -16px) scale(0.8); opacity: 0;
+      transition: transform .5s var(--ease-io), opacity .35s var(--ease-io);
+      box-shadow: 0 1px 0 rgba(0,0,0,.08);
+    }
+    .cursor-pill__inner::before {
+      content: ''; width: 6px; height: 6px; background: var(--pink); transform: rotate(45deg); flex: none;
+    }
+    .cursor-pill.is-visible .cursor-pill__inner { transform: translate(18px, -16px) scale(1); opacity: 1; }
+    @media (hover: none) { .cursor-pill { display: none; } }
+
+    /* ── Preloader ── */
+    .preloader { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+    .preloader__bg { position: absolute; inset: 0; background: var(--paper); }
+    .preloader__count {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      font-family: var(--display); font-weight: 800; font-size: 9vw; line-height: 1;
+      letter-spacing: -0.04em; color: var(--pink);
+    }
+    .preloader__panel {
+      position: absolute; inset: 0; background: var(--pink); transform: translateY(100%);
+      transition: transform .6s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    .preloader.is-covering .preloader__panel { transform: translateY(0); }
+    .preloader.is-revealing .preloader__panel { transform: translateY(-100%); }
+    .preloader.is-revealing .preloader__bg, .preloader.is-revealing .preloader__count { opacity: 0; }
+    .preloader.is-done { display: none; }
+
+    /* ── Fallback when WebGL is unavailable ── */
+    .fallback { display: none; }
+    .no-webgl .fallback {
+      display: flex; gap: 24px; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+      padding: 0 24px; overflow-x: auto; z-index: 3; pointer-events: auto;
+    }
+    .no-webgl .fallback a { flex: none; width: 180px; text-decoration: none; }
+    .no-webgl .fallback img { width: 100%; display: block; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+
+    /* ── Narrow screens ── */
+    /* matches the narrow layout in hero.js (aspect ratio under 0.9) */
+    @media (max-aspect-ratio: 9/10) {
+      .nav { gap: 14px; top: 10px; }
+      .meta { top: 72px; left: 16px; right: 16px; width: auto; }
+      .meta__title { margin-bottom: 4px; }
+      .notes { left: 16px; right: 16px; bottom: 56px; width: auto; }
+      .order-cta { top: auto; bottom: 16px; right: 16px; }
+      .prompt { display: none; }
+      .shape-layer__shape { width: 150vw; top: 62%; }
+      .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
     }
 
-    /* Fixed 600px canvas — scaled down on mobile via JS */
-    .page {
-      position: relative;
-      width: 600px;
-      height: 1440px;
-      transform-origin: top left;
-    }
-
-    .block {
-      position: absolute;
-    }
-
-    .block img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    /* Background texture */
-    #image-993 {
-      width: 1369px; height: 912px;
-      left: 249px;   top: 457px;
-      z-index: 10;
-      overflow: hidden;
-    }
-
-    /* Logo */
-    #image-995 {
-      width: 459px; height: 237px;
-      left: 230px;  top: 135px;
-      z-index: 35;
-      overflow: hidden;
-    }
-
-    /* Animated gif (tilted) */
-    #image-996 {
-      width: 244px; height: 214px;
-      left: 487px;  top: 173px;
-      z-index: 40;
-      overflow: hidden;
-      transform: rotate(-11.4deg);
-    }
-
-    /* Tagline */
-    #text-about {
-      left: 64px; top: 206px;
-      z-index: 30;
-      font-size: 38px; /* 0.064 × 600 */
-      line-height: 1.25;
-      text-align: center;
-      color: #000;
-      white-space: nowrap;
-    }
-
-    /* Main content image */
-    #image-994 {
-      width: 934px; height: 794px;
-      left: 135px;  top: 640px;
-      z-index: 45;
-      overflow: hidden;
-    }
-
-    /* Left decorative panel (no link) */
-    #image-998 {
-      width: 345px; height: 494px;
-      left: -200px; top: 725px;
-      z-index: 55;
-      overflow: hidden;
-    }
-
-    /* Right panel — linked with grow-on-hover */
-    #image-997 {
-      width: 345px; height: 494px;
-      left: 240px;  top: 725px;
-      z-index: 50;
-      overflow: hidden;
-    }
-
-    #image-997 a {
-      display: block;
-      width: 100%;
-      height: 100%;
-      pointer-events: all;
-    }
-
-    #image-997 a img {
-      transition: transform 0.25s ease;
-      pointer-events: none;
-    }
-
-    #image-997 a:hover img {
-      transform: scale(1.06);
-    }
-
-    /* ── Order form ── */
-    .order-section {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 48px 24px 64px;
-      font-family: 'Comic Neue', cursive;
-    }
-
-    .order-section h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .order-section p.subtitle {
-      font-size: 15px;
-      margin-bottom: 32px;
-      color: #444;
-    }
-
-    .order-section label {
-      display: block;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 6px;
-      margin-top: 20px;
-    }
-
-    .order-section input,
-    .order-section textarea,
-    .order-section select {
-      width: 100%;
-      border: 2px solid #000;
-      padding: 10px 12px;
-      font-family: 'Comic Neue', cursive;
-      font-size: 15px;
-      background: #fff;
-      border-radius: 0;
-      appearance: none;
-      outline: none;
-    }
-
-    .order-section input:focus,
-    .order-section textarea:focus,
-    .order-section select:focus {
-      background: #fffde7;
-    }
-
-    .order-section textarea {
-      resize: vertical;
-      min-height: 90px;
-    }
-
-    .order-section .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .order-section button {
-      display: block;
-      width: 100%;
-      margin-top: 32px;
-      padding: 14px;
-      background: #000;
-      color: #fff;
-      font-family: 'Comic Neue', cursive;
-      font-size: 17px;
-      font-weight: 700;
-      border: 2px solid #000;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .order-section button:hover:not(:disabled) {
-      background: #fff;
-      color: #000;
-    }
-
-    .order-section button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #form-status {
-      margin-top: 20px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      display: none;
-    }
-
-    #form-status.success {
-      background: #e8f5e9;
-      border: 2px solid #000;
-      display: block;
-    }
-
-    #form-status.error {
-      background: #ffebee;
-      border: 2px solid #000;
-      display: block;
+    @media (prefers-reduced-motion: reduce) {
+      .line, .rule, .swap.is-out .line, .swap.is-out .rule { transition: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="page-wrapper">
-    <div class="page">
-
-      <!-- Background texture -->
-      <div id="image-993" class="block">
-        <img src="https://asset.mmm.page/86/44579b2c1746ff887cbda9476d60cc/1eyovfk.png" alt="">
-      </div>
-
-      <!-- Logo -->
-      <div id="image-995" class="block">
-        <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
-      </div>
-
-      <!-- Rotating gif -->
-      <div id="image-996" class="block">
-        <img src="https://asset.mmm.page/d6/916509f49e460298883b873e4bdb88/879m6.gif" alt="">
-      </div>
-
-
-      <!-- Main content -->
-      <div id="image-994" class="block">
-        <img src="https://asset.mmm.page/65/ec1e3e430a4bf3a4ab45a4dffd385f/tee5fy.png" alt="">
-      </div>
-
-      <!-- Left decorative panel -->
-      <div id="image-998" class="block">
-        <img src="https://asset.mmm.page/20/98e07c8d1248159fac37bbadf5d845/jh8s8o.png" alt="">
-      </div>
-
-      <!-- Right panel (linked) -->
-      <div id="image-997" class="block">
-        <a href="catalog.html" target="_self">
-          <img src="https://asset.mmm.page/20/98e07c8d1248159fac37bbadf5d845/jh8s8o.png" alt="">
-        </a>
-      </div>
-
-    </div>
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__bg"></div>
+    <div class="preloader__count" id="preloader-count">0%</div>
+    <div class="preloader__panel"></div>
   </div>
 
-  <!-- EmailJS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <section class="hero" id="hero" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Junki zines. Use the left and right arrow keys to browse, Enter to order.">
+    <h1 class="sr-only">Junki Magazine</h1>
 
-  <!-- Order form (outside the scaled canvas so it stays readable on mobile) -->
-  <section class="order-section">
-    <h2>Order a copy</h2>
-    <p class="subtitle">Fill in your details and we'll get back to you with payment info.</p>
+    <div class="shape-layer" aria-hidden="true">
+      <svg class="shape-layer__shape" id="shape" viewBox="0 0 1030 440" preserveAspectRatio="xMidYMin meet">
+        <path fill="#0078BF" d="M70 150 Q80 110 120 100 L380 52 Q515 22 650 52 L910 100 Q950 110 960 150 L1010 330 Q1030 400 1030 440 L0 440 Q0 400 20 330 Z"/>
+      </svg>
+      <svg class="shape-layer__badge" id="badge" viewBox="0 0 1000 1000">
+        <defs><path id="badge-circle" d="M500,500 m-430,0 a430,430 0 1,1 860,0 a430,430 0 1,1 -860,0"/></defs>
+        <text><textPath href="#badge-circle" textLength="2701" lengthAdjust="spacing">Junki Magazine · Zines · Archive · Order a copy · Junki Magazine · Zines · </textPath></text>
+      </svg>
+    </div>
 
-    <form id="order-form" novalidate>
-      <label for="f-name">Full name</label>
-      <input id="f-name" name="customer_name" type="text" required placeholder="Your name">
+    <canvas class="hero__gl" id="gl"></canvas>
+    <canvas class="hero__scribble" id="scribble"></canvas>
+    <div class="fallback" id="fallback"></div>
 
-      <label for="f-email">Email</label>
-      <input id="f-email" name="customer_email" type="email" required placeholder="you@example.com">
-
-      <label for="f-address">Delivery address</label>
-      <textarea id="f-address" name="customer_address" required placeholder="Street, city, postcode, country"></textarea>
-
-      <div class="row">
-        <div>
-          <label for="f-issue">Which issue</label>
-          <input id="f-issue" name="issue" type="text" required placeholder="e.g. Issue 1">
+    <div class="ui">
+      <nav class="nav" aria-label="Main">
+        <a class="nav__logo" href="index.html" aria-label="Junki Magazine, home">
+          <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
+        </a>
+        <a class="nav__link is-active" href="index.html" aria-current="page">Zines</a>
+        <a class="nav__link" href="catalog.html">Catalog</a>
+        <div class="index" id="index">
+          <button class="nav__link" id="index-btn" aria-expanded="false" aria-controls="index-list">Index ▾</button>
+          <ul class="index__list" id="index-list"></ul>
         </div>
-        <div>
-          <label for="f-qty">Quantity</label>
-          <input id="f-qty" name="quantity" type="number" min="1" value="1" required>
-        </div>
-      </div>
+      </nav>
 
-      <button type="submit" id="submit-btn">Place order</button>
-      <div id="form-status"></div>
-    </form>
+      <a class="order-cta" id="order-cta" href="catalog.html">Order ↗</a>
+
+      <div class="meta swap" id="meta"></div>
+      <div class="notes swap" id="notes"></div>
+      <p class="prompt">Scroll, drag or use ← → to browse</p>
+    </div>
   </section>
 
+  <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Order this issue</div></div>
+  <div class="sr-only" aria-live="polite" id="live"></div>
+
+  <script src="zines.js"></script>
   <script>
-    function scaleToFit() {
-      var page = document.querySelector('.page');
-      var wrapper = document.querySelector('.page-wrapper');
-      var scale = Math.min(1, window.innerWidth / 600);
-      page.style.transform = 'scale(' + scale + ')';
-      wrapper.style.height = (page.offsetHeight * scale) + 'px';
-    }
-    window.addEventListener('resize', scaleToFit);
-    scaleToFit();
+    // Failsafe: never leave the page hidden behind the preloader.
+    setTimeout(function () {
+      document.documentElement.removeAttribute('data-preload');
+      document.getElementById('preloader').classList.add('is-done');
+    }, 20000);
   </script>
-
-  <script>
-    // ── EmailJS config ──────────────────────────────────────────────
-    // 1. Create a free account at https://emailjs.com
-    // 2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
-    // 3. Create TWO email templates (see comments below) → copy their Template IDs
-    // 4. Go to Account → API Keys → copy your Public Key
-    // Then replace the four placeholder strings below.
-
-    var EMAILJS_PUBLIC_KEY   = 'YOUR_PUBLIC_KEY';   // Account > API Keys
-    var EMAILJS_SERVICE_ID   = 'YOUR_SERVICE_ID';   // Email Services
-
-    // Template 1 — order notification sent TO YOU
-    // Suggested subject: "New order from {{customer_name}}"
-    // Body: name, email, address, issue, quantity  (use {{variable_name}} syntax)
-    var ORDER_TEMPLATE_ID    = 'YOUR_ORDER_TEMPLATE_ID';
-
-    // Template 2 — auto-reply sent TO THE CUSTOMER
-    // Suggested subject: "Thanks for your order — payment details inside"
-    // Body: greet by {{customer_name}}, list their order, then paste your bank details
-    // Set "To Email" field in the template to {{customer_email}}
-    var REPLY_TEMPLATE_ID    = 'YOUR_REPLY_TEMPLATE_ID';
-    // ────────────────────────────────────────────────────────────────
-
-    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-
-    document.getElementById('order-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-
-      var form   = e.target;
-      var btn    = document.getElementById('submit-btn');
-      var status = document.getElementById('form-status');
-
-      // Basic validation
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-
-      var params = {
-        customer_name:    form.customer_name.value.trim(),
-        customer_email:   form.customer_email.value.trim(),
-        customer_address: form.customer_address.value.trim(),
-        issue:            form.issue.value.trim(),
-        quantity:         form.quantity.value,
-      };
-
-      btn.disabled    = true;
-      btn.textContent = 'Sending…';
-      status.className = '';
-      status.style.display = 'none';
-
-      try {
-        // Notify the collective
-        await emailjs.send(EMAILJS_SERVICE_ID, ORDER_TEMPLATE_ID, params);
-        // Auto-reply to the customer
-        await emailjs.send(EMAILJS_SERVICE_ID, REPLY_TEMPLATE_ID, params);
-
-        status.className     = 'success';
-        status.textContent   = 'Order received! Check your inbox — we\'ve sent you payment details.';
-        form.reset();
-      } catch (err) {
-        status.className   = 'error';
-        status.textContent = 'Something went wrong. Please try again or email us directly.';
-        console.error(err);
-      } finally {
-        btn.disabled    = false;
-        btn.textContent = 'Place order';
-      }
-    });
-  </script>
+  <script type="module" src="hero.js"></script>
 </body>
 </html>
