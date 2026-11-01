@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import { makeCover, makeGrain, makePageEdge, waitForFonts } from './covers.js';
+import { makeCover, waitForFonts } from './covers.js';
+import { createZineKit } from './zine-mesh.js';
 import { createWheelStepper } from './wheel-steps.js';
 
 // Every tunable value lives here. Add ?debug to the URL for a live panel.
@@ -72,7 +73,7 @@ const pill = $('cursor-pill'), pillText = $('cursor-pill-text');
 const badgeEl = $('badge'), shapeEl = $('shape');
 const preloader = $('preloader'), preloaderCount = $('preloader-count');
 
-const orderUrl = z => 'catalog.html?zine=' + encodeURIComponent(z.slug);
+const detailUrl = z => 'zine.html?zine=' + encodeURIComponent(z.slug);
 
 // ── Renderer ─────────────────────────────────────────────────────────
 let renderer;
@@ -91,7 +92,7 @@ function startFallback() {
   document.documentElement.classList.add('no-webgl');
   const fb = $('fallback');
   ZINES.forEach(async z => {
-    const a = document.createElement('a'); a.href = orderUrl(z); a.setAttribute('aria-label', z.title);
+    const a = document.createElement('a'); a.href = detailUrl(z); a.setAttribute('aria-label', z.title);
     fb.appendChild(a);
     const c = await makeCover(z, 'front'); const img = new Image(); img.alt = z.title; img.src = c.toDataURL('image/jpeg', 0.85); a.appendChild(img);
   });
@@ -132,60 +133,25 @@ function init() {
   scene.add(gallery);
 
   // ── Zine meshes ────────────────────────────────────────────────────
-  const ZH = CONFIG.zineHeight, ZW = ZH * 148 / 210, ZT = CONFIG.zineThickness;
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-
-  const grainTex = new THREE.CanvasTexture(makeGrain());
-  grainTex.wrapS = grainTex.wrapT = THREE.RepeatWrapping; grainTex.repeat.set(3, 4);
-  const edgeV = new THREE.CanvasTexture(makePageEdge('v')); edgeV.colorSpace = THREE.SRGBColorSpace;
-  const edgeH = new THREE.CanvasTexture(makePageEdge('h')); edgeH.colorSpace = THREE.SRGBColorSpace;
-  const edgeMatV = new THREE.MeshPhysicalMaterial({ map: edgeV, roughness: 0.95, metalness: 0 });
-  const edgeMatH = new THREE.MeshPhysicalMaterial({ map: edgeH, roughness: 0.95, metalness: 0 });
-  const stapleMat = new THREE.MeshPhysicalMaterial({ color: 0xc9c9c9, metalness: 1, roughness: 0.3 });
-  const boxGeo = new THREE.BoxGeometry(ZW, ZH, ZT);
-  const stapleGeo = new THREE.CylinderGeometry(0.0035, 0.0035, 0.12, 8);
-
-  function paperMaterial(zine) {
-    const glossy = zine.paper === 'glossy';
-    return new THREE.MeshPhysicalMaterial({
-      color: 0xffffff, roughness: glossy ? 0.6 : 0.85, metalness: 0,
-      clearcoat: glossy ? 0.35 : 0, clearcoatRoughness: 0.3,
-      sheen: 0.15, sheenRoughness: 0.8, sheenColor: new THREE.Color(0xffffff),
-      roughnessMap: grainTex, bumpMap: grainTex, bumpScale: 0.25,
-      envMapIntensity: CONFIG.environmentIntensity,
-    });
-  }
+  const kit = createZineKit(renderer, { height: CONFIG.zineHeight, thickness: CONFIG.zineThickness, envIntensity: CONFIG.environmentIntensity });
+  const { ZW, ZH, ZT } = kit;
 
   const items = ZINES.map((zine, i) => {
-    const front = paperMaterial(zine), back = paperMaterial(zine);
-    const spine = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(zine.inks?.[0] || '#ddd'), roughness: 0.85 });
-    // box faces: +x fore edge, -x spine, +y top, -y bottom, +z front, -z back
-    const mesh = new THREE.Mesh(boxGeo, [edgeMatV, spine, edgeMatH, edgeMatH, front, back]);
-    mesh.userData.index = i;
-    const inner = new THREE.Group(); inner.add(mesh);
-    for (const y of [-ZH / 4, ZH / 4]) {
-      const s = new THREE.Mesh(stapleGeo, stapleMat); s.position.set(-ZW / 2 - 0.0015, y, 0); inner.add(s);
-    }
-    const group = new THREE.Group(); group.add(inner); group.visible = false;
+    const z = kit.build(zine);
+    z.mesh.userData.index = i;
+    const group = new THREE.Group(); group.add(z.inner); group.visible = false;
     gallery.add(group);
     return {
-      i, zine, group, inner, mesh, front, back,
+      ...z, i, zine, group,
       px: i * CONFIG.hGap, py: 0, pz: 0, ps: CONFIG.inactiveScale,
       push: 0, pushSpin: 0,
       spin: 0, spinVel: 0,
       tiltX: 0, tiltY: 0, press: 0, pressX: 0, pressY: 0,
-      loaded: false,
     };
   });
 
   async function loadTextures(item) {
-    if (item.loaded) return; item.loaded = true;
-    const [f, b] = await Promise.all([makeCover(item.zine, 'front'), makeCover(item.zine, 'back')]);
-    for (const [mat, c] of [[item.front, f], [item.back, b]]) {
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
-      mat.map = t; mat.needsUpdate = true;
-    }
-    item.frontCanvas = f;
+    await kit.loadTextures(item, item.zine);
     dirty = true;
   }
 
@@ -545,7 +511,7 @@ function init() {
   }
   function setPill(h) {
     pill.classList.toggle('is-visible', !!h);
-    if (h) pillText.textContent = h.item.i === target ? 'Order this issue' : 'Bring to front';
+    if (h) pillText.textContent = h.item.i === target ? 'See this issue' : 'Bring to front';
   }
 
   hero.addEventListener('pointermove', e => {
@@ -621,11 +587,12 @@ function init() {
   function open(index) {
     if (flight) return;
     const z = ZINES[index];
-    if (reduce) { location.href = orderUrl(z); return; }
+    if (reduce) { location.href = detailUrl(z); return; }
     flight = { index, start: clock };
+    try { sessionStorage.setItem('junki-flight', z.slug); } catch (e) {}
     hero.classList.add('is-leaving');
     setPill(null);
-    setTimeout(() => { location.href = orderUrl(z); }, 650);
+    setTimeout(() => { location.href = detailUrl(z); }, 650);
   }
   // coming back with the browser's back button restores the page from cache
   addEventListener('pageshow', e => { if (e.persisted) { flight = null; hero.classList.remove('is-leaving'); dirty = true; } });

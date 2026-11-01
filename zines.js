@@ -14,6 +14,12 @@
 //   inks          two riso ink colours for the generated cover
 //   paper         'uncoated' (matte) or 'glossy'
 //
+// Optional, used on the zine's own page (zine.html?zine=<slug>):
+//   intro         paragraph under the hero (falls back to description)
+//   formats       little round chips in the details table, e.g. ['A5', '24 pp']
+//   spreads       photos for the drag slider, e.g. ['img/issue-01/spread-1.jpg', ...]
+//                 (until then the slider shows placeholder images built from the covers)
+//
 // Everything below is placeholder copy. Replace it with the real issues.
 window.JUNKI_ZINES = [
   { slug: 'issue-01', title: 'Issue 01', issue: 'Nº 01', year: null, contributors: ['Contributor A', 'Contributor B'], price: '€5', description: 'Placeholder description for issue 01.', front: '', back: '', inks: ['#FF48B0', '#0078BF'], paper: 'uncoated' },
