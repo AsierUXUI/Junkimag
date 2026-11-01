@@ -215,7 +215,8 @@ export function createGallery({ root, showPill, onLightbox }) {
     requestAnimationFrame(frame);
     const ratio = lastT ? Math.min((now - lastT) / (1000 / 60), 3) : 1; lastT = now;
     // gentle drift while nobody is touching it
-    const drifting = CONFIG.autoSpeed > 0 && !reduce && !drag && hover < 0 && !paused && cards.length > 0;
+    // gentle drift on desktop only; on phones it moves only when swiped
+    const drifting = CONFIG.autoSpeed > 0 && finePointer && !reduce && !drag && hover < 0 && !paused && cards.length > 0;
     if (drifting) target += CONFIG.autoSpeed * ratio / 60;
     const k = 1 - Math.pow(1 - CONFIG.lerp, ratio);
     current += (target - current) * (reduce ? 1 : k);
