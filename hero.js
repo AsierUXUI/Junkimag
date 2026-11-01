@@ -113,7 +113,7 @@ function startFallback() {
   renderMeta(0, false);
   document.documentElement.removeAttribute('data-preload');
   preloader.classList.add('is-done');
-  (hero.classList.add('is-ready'), $('home-ui').classList.add('is-ready'));
+  hero.classList.add('is-ready');
 }
 
 function init() {
@@ -858,11 +858,11 @@ function init() {
         // opened straight from a link to a zine: skip the fan-out, the zine rises into its page
         introDone = true; away = 1;
         openDetail(entryIndex, { push: false, fromBelow: true });
-        (hero.classList.add('is-ready'), $('home-ui').classList.add('is-ready'));
+        hero.classList.add('is-ready');
         return;
       }
       startMarks(startIndex);
-      setTimeout(() => (hero.classList.add('is-ready'), $('home-ui').classList.add('is-ready')), reduce ? 0 : 1400);
+      setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
     };
     if (reduce || quick) {
       preloader.classList.add('is-done'); reveal(); return;

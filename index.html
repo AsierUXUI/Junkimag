@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=16",
-        "./detail.js": "./detail.js?v=16",
-        "./covers.js": "./covers.js?v=16",
-        "./zine-mesh.js": "./zine-mesh.js?v=16",
-        "./wheel-steps.js": "./wheel-steps.js?v=16",
-        "./trail.js": "./trail.js?v=16",
-        "./gallery.js": "./gallery.js?v=16"
+        "./hero.js": "./hero.js?v=17",
+        "./detail.js": "./detail.js?v=17",
+        "./covers.js": "./covers.js?v=17",
+        "./zine-mesh.js": "./zine-mesh.js?v=17",
+        "./wheel-steps.js": "./wheel-steps.js?v=17",
+        "./trail.js": "./trail.js?v=17",
+        "./gallery.js": "./gallery.js?v=17"
       }
     }
   </script>
@@ -110,9 +110,9 @@
       position: absolute; left: 50%; top: 52%; width: 77vw; height: auto;
       transform: translate(-50%, var(--shape-y, 0px)) scale(0.96); transform-origin: 50% 0;
     }
-    /* solid blue from the bottom of the hill shape down to the bottom of the screen */
+    /* phones: solid blue from the bottom of the hill shape down to the bottom of the screen */
     .shape-layer__fill {
-      position: absolute; left: 50%; bottom: 0; background: #0078BF;
+      display: none; position: absolute; left: 50%; bottom: 0; background: #0078BF;
       width: calc(77vw * 0.96); top: calc(52% + 77vw * 440 / 1030 * 0.96 - 2px);
       transform: translate(-50%, var(--shape-y, 0px));
     }
@@ -128,8 +128,7 @@
     }
 
     /* ── UI layer ── */
-    .ui { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
-    .is-detail .ui, .is-detail .ui * { pointer-events: none !important; }
+    .ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
     .ui a, .ui button { pointer-events: auto; }
 
     .site-header { position: fixed; top: 0; left: 0; right: 0; height: 0; z-index: 40; }
@@ -190,11 +189,7 @@
     .swap.is-pre .rule { transform: scaleX(0); transition: none; }
 
     /* notes (bottom right) */
-    /* format / price / tip: top right on desktop, under the Order button, mirroring the issue details */
-    .notes {
-      position: absolute; right: 14px; top: 64px; width: clamp(220px, 19vw, 300px);
-      background: color-mix(in srgb, var(--paper) 88%, transparent); padding: 0 8px 6px; margin-right: -8px;
-    }
+    .notes { position: absolute; right: 14px; bottom: 14px; width: clamp(200px, 17vw, 280px); }
     .notes .meta__row:last-child { padding-bottom: 0; }
 
     /* phones only: opens the zine in front */
@@ -216,7 +211,7 @@
       color: var(--cream); white-space: nowrap;
       transition: opacity .9s var(--ease-io) .18s, transform .9s var(--ease-io) .18s;
     }
-    .is-ready .prompt, .ui.is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
+    .is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
 
     /* UI hidden until the intro runs */
     html[data-preload] .ui, html[data-preload] .shape-layer { opacity: 0; }
@@ -275,7 +270,7 @@
       .meta { top: 72px; left: 16px; right: 16px; width: auto; }
       .meta__title { margin-bottom: 4px; }
       .notes {
-        left: 8px; right: 8px; top: auto; bottom: 76px; width: auto; margin: 0;
+        left: 8px; right: 8px; bottom: 76px; width: auto;
         background: var(--paper); padding: 0 8px 6px;
       }
       .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
@@ -284,7 +279,7 @@
       .social { display: none; }
       .see-more { display: flex; }
       .shape-layer__shape { width: 150vw; top: 62%; }
-      .shape-layer__fill { width: calc(150vw * 0.96); top: calc(62% + 150vw * 440 / 1030 * 0.96 - 2px); }
+      .shape-layer__fill { display: block; width: calc(150vw * 0.96); top: calc(62% + 150vw * 440 / 1030 * 0.96 - 2px); }
       .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
     }
 
@@ -556,18 +551,16 @@
     <canvas class="hero__scribble" id="scribble"></canvas>
     <div class="fallback" id="fallback"></div>
 
+    <div class="ui">
+      <div class="meta swap" id="meta"></div>
+      <div class="notes swap" id="notes"></div>
+      <p class="prompt">Scroll, drag or use ← → to browse</p>
+      <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
+      <button class="see-more" id="see-more" type="button">See more</button>
+    </div>
   </section>
 
   <canvas class="stage-gl" id="gl" aria-hidden="true"></canvas>
-
-  <!-- home page text (issue details, notes, prompt): its own layer above the 3D zines -->
-  <div class="ui" id="home-ui">
-    <div class="meta swap" id="meta"></div>
-    <div class="notes swap" id="notes"></div>
-    <p class="prompt">Scroll, drag or use ← → to browse</p>
-    <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
-    <button class="see-more" id="see-more" type="button">See more</button>
-  </div>
 
   <!-- Zine detail view (index.html?zine=<slug>). Filled in by detail.js. -->
   <div id="detail" aria-hidden="true">
@@ -629,9 +622,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=16"></script>
+  <script src="zines.js?v=17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=16"></script>
+  <script src="order.js?v=17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -640,6 +633,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=16"></script>
+  <script type="module" src="hero.js?v=17"></script>
 </body>
 </html>
