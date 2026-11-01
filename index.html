@@ -93,7 +93,7 @@
 
     /* ── UI layer ── */
     .ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-    .ui a, .ui button, .ui .index__list { pointer-events: auto; }
+    .ui a, .ui button { pointer-events: auto; }
 
     .nav {
       position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
@@ -111,24 +111,6 @@
       content: ''; position: absolute; left: 50%; bottom: -5px; width: 3px; height: 3px;
       margin-left: -1.5px; border-radius: 50%; background: var(--ink);
     }
-    .index { position: relative; }
-    .index__list {
-      position: absolute; top: calc(100% + 10px); left: 50%; min-width: 210px;
-      transform: translate(-50%, -6px); opacity: 0; visibility: hidden;
-      background: var(--paper); border: 1px solid var(--ink); list-style: none;
-      transition: opacity .25s var(--ease-io), transform .25s var(--ease-io), visibility 0s .25s;
-      max-height: 60vh; overflow: auto;
-    }
-    .index.is-open .index__list { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
-    .index__list button {
-      display: flex; justify-content: space-between; gap: 16px; width: 100%;
-      padding: 8px 12px; font: inherit; color: var(--ink); background: none; border: 0;
-      border-bottom: 1px solid rgba(17,17,17,.15); cursor: pointer; text-align: left;
-    }
-    .index__list li:last-child button { border-bottom: 0; }
-    .index__list button:hover, .index__list button:focus-visible { background: var(--ink); color: var(--paper); }
-    .index__list .num { font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase; align-self: center; }
-
     .order-cta {
       position: absolute; top: 18px; right: 18px; text-decoration: none;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
@@ -254,7 +236,7 @@
     <div class="preloader__panel"></div>
   </div>
 
-  <section class="hero" id="hero" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Junki zines. Use the left and right arrow keys to browse, Enter to order.">
+  <section class="hero" id="hero" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Junki zines. Use the left and right arrow keys to browse, Enter to open the zine in front.">
     <h1 class="sr-only">Junki Magazine</h1>
 
     <div class="shape-layer" aria-hidden="true">
@@ -277,11 +259,7 @@
           <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
         </a>
         <a class="nav__link is-active" href="index.html" aria-current="page">Zines</a>
-        <a class="nav__link" href="catalog.html">Catalog</a>
-        <div class="index" id="index">
-          <button class="nav__link" id="index-btn" aria-expanded="false" aria-controls="index-list">Index ▾</button>
-          <ul class="index__list" id="index-list"></ul>
-        </div>
+        <a class="nav__link" href="about.html">About us</a>
       </nav>
 
       <a class="order-cta" id="order-cta" href="catalog.html">Order ↗</a>
@@ -292,7 +270,7 @@
     </div>
   </section>
 
-  <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Order this issue</div></div>
+  <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
   <script src="zines.js"></script>
