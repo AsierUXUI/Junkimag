@@ -50,7 +50,7 @@ const CONFIG = {
   openDuration: 1.1, closeDuration: 0.9, othersRecede: 4, othersDrop: 2.5, othersRate: 4,
   // detail hero choreography (scroll-driven)
   detailScrollRange: 0.45, detailRise: 0.24, detailTilt: 20,
-  detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75,
+  detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75, detailMobileRestTop: 0.52,
   detailExposure: 1.0, detailKeyIntensity: 1.3,
   // crop marks around the zine in front (px)
   marksEnabled: 1, marksGap: 10, marksLength: 22, marksDrawTime: 0.5,
@@ -396,7 +396,9 @@ function init() {
     const W = innerWidth, H = innerHeight, mobile = W < 768;
     const H0 = mobile ? Math.min(0.7 * W / 0.705, 0.8 * H) : Math.min(0.569 * W, 0.85 * H);
     const p = clamp(sy / (CONFIG.detailScrollRange * H), 0, 1);
-    const cyPage = 0.8 * H + H0 / 2 - CONFIG.detailRise * H * p + offsetVh * H;
+    // where the zine's top edge rests before scrolling: phones start it right under the order button
+    const restTop = mobile ? CONFIG.detailMobileRestTop : 0.8;
+    const cyPage = restTop * H + H0 / 2 - CONFIG.detailRise * H * p + offsetVh * H;
     const cyView = cyPage - sy;
     const scale = lerp(mobile ? CONFIG.detailMobileScaleFrom : CONFIG.detailScaleFrom, mobile ? CONFIG.detailMobileScaleTo : CONFIG.detailScaleTo, p);
     const k = visH() / H;   // world units per CSS pixel on the z = 0 plane

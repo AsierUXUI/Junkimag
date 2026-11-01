@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=22",
-        "./detail.js": "./detail.js?v=22",
-        "./covers.js": "./covers.js?v=22",
-        "./zine-mesh.js": "./zine-mesh.js?v=22",
-        "./wheel-steps.js": "./wheel-steps.js?v=22",
-        "./trail.js": "./trail.js?v=22",
-        "./gallery.js": "./gallery.js?v=22"
+        "./hero.js": "./hero.js?v=23",
+        "./detail.js": "./detail.js?v=23",
+        "./covers.js": "./covers.js?v=23",
+        "./zine-mesh.js": "./zine-mesh.js?v=23",
+        "./wheel-steps.js": "./wheel-steps.js?v=23",
+        "./trail.js": "./trail.js?v=23",
+        "./gallery.js": "./gallery.js?v=23"
       }
     }
   </script>
@@ -482,7 +482,9 @@
       .zhero__title { font-size: 16vw; top: 30%; }
       .zhero__lead { top: calc(30% + 10vw); }
       .zhero__desc { font-size: 16px; margin-bottom: 16px; }
-      .zmeta { padding-top: 75vw; }
+      .zhero__stage { height: 94vh; height: 94svh; }
+      .zmeta { padding-top: 24px; padding-bottom: 32px; }
+      .zmeta__cta { margin-top: 36px; }
       .scroll-hint { bottom: 72px; }
       .zhero__meta { top: 92px; font-size: 18px; grid-template-columns: 1fr 1fr; padding: 0 var(--gutter); }
       .zhero__meta-left { grid-column: 1; }
@@ -492,10 +494,13 @@
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
       .zmeta.is-revealed .zmeta__col + .zmeta__col::before { transform: scaleX(1); }
       .zmeta__value { font-size: 18px; }
-      .slider.ribbon { height: 92vw; }
-      .ribbon-pin { height: 200vh; margin-bottom: 60px; }
+      .slider.ribbon { height: 68vh; height: 68svh; }   /* fills the pinned screen under the heading */
+      .ribbon-pin { height: 200vh; margin-bottom: 48px; }
+      /* phones: start the gallery under the header instead of centring it in a full-height block */
+      .ribbon-pin__sticky { justify-content: flex-start; padding-top: 72px; }
       .lightbox__prev, .lightbox__next { top: auto; bottom: 14px; margin-top: 0; }
-      .others__title { font-size: 14vw; margin-bottom: 36px; }
+      .others__title { font-size: 14vw; margin-bottom: 28px; }
+      .others { padding-bottom: 80px; }
       .card { width: 70vw; height: calc(70vw * 1.31); }
       .site-footer__links { font-size: 24px; }
       .site-footer__contact { text-align: left; }
@@ -621,9 +626,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=22"></script>
+  <script src="zines.js?v=23"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=22"></script>
+  <script src="order.js?v=23"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -632,6 +637,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=22"></script>
+  <script type="module" src="hero.js?v=23"></script>
 </body>
 </html>
