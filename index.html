@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=17",
-        "./detail.js": "./detail.js?v=17",
-        "./covers.js": "./covers.js?v=17",
-        "./zine-mesh.js": "./zine-mesh.js?v=17",
-        "./wheel-steps.js": "./wheel-steps.js?v=17",
-        "./trail.js": "./trail.js?v=17",
-        "./gallery.js": "./gallery.js?v=17"
+        "./hero.js": "./hero.js?v=18",
+        "./detail.js": "./detail.js?v=18",
+        "./covers.js": "./covers.js?v=18",
+        "./zine-mesh.js": "./zine-mesh.js?v=18",
+        "./wheel-steps.js": "./wheel-steps.js?v=18",
+        "./trail.js": "./trail.js?v=18",
+        "./gallery.js": "./gallery.js?v=18"
       }
     }
   </script>
@@ -112,9 +112,15 @@
     }
     /* phones: solid blue from the bottom of the hill shape down to the bottom of the screen */
     .shape-layer__fill {
-      display: none; position: absolute; left: 50%; bottom: 0; background: #0078BF;
+      display: none; position: absolute; left: 50%; bottom: 0; background: #8EE000;   /* continues the lime gradient's end colour */
+      overflow: hidden;
       width: calc(77vw * 0.96); top: calc(52% + 77vw * 440 / 1030 * 0.96 - 2px);
       transform: translate(-50%, var(--shape-y, 0px));
+    }
+    .shape-layer__fill::after {
+      content: ''; position: absolute; inset: 0; background: var(--ink); opacity: .13;
+      -webkit-mask-image: url(img/jonas-drawing.webp); mask-image: url(img/jonas-drawing.webp);
+      -webkit-mask-size: 144vw auto; mask-size: 144vw auto; -webkit-mask-repeat: repeat; mask-repeat: repeat;
     }
     .shape-layer__badge {
       position: absolute; left: 50%; top: calc(52% - 6vw); width: 90vw; height: 90vw;
@@ -208,7 +214,7 @@
     .prompt {
       position: absolute; left: 50%; bottom: 28px; transform: translate(-50%, 10px); opacity: 0;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
-      color: var(--cream); white-space: nowrap;
+      color: var(--ink); white-space: nowrap;
       transition: opacity .9s var(--ease-io) .18s, transform .9s var(--ease-io) .18s;
     }
     .is-ready .prompt { opacity: 1; transform: translate(-50%, 0); }
@@ -540,7 +546,18 @@
     <div class="shape-layer" aria-hidden="true">
       <div class="shape-layer__fill"></div>
       <svg class="shape-layer__shape" id="shape" viewBox="0 0 1030 440" preserveAspectRatio="xMidYMin meet">
-        <path fill="#0078BF" d="M70 150 Q80 110 120 100 L380 52 Q515 22 650 52 L910 100 Q950 110 960 150 L1010 330 Q1030 400 1030 440 L0 440 Q0 400 20 330 Z"/>
+        <defs>
+          <!-- lime gradient for the hill behind the zines -->
+          <linearGradient id="shape-lime" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stop-color="#E4FF5C"/>
+            <stop offset="1" stop-color="#8EE000"/>
+          </linearGradient>
+          <clipPath id="shape-clip"><path d="M70 150 Q80 110 120 100 L380 52 Q515 22 650 52 L910 100 Q950 110 960 150 L1010 330 Q1030 400 1030 440 L0 440 Q0 400 20 330 Z"/></clipPath>
+        </defs>
+        <path fill="url(#shape-lime)" d="M70 150 Q80 110 120 100 L380 52 Q515 22 650 52 L910 100 Q950 110 960 150 L1010 330 Q1030 400 1030 440 L0 440 Q0 400 20 330 Z"/>
+        <!-- Jonas's drawing, very faint, only inside the shape -->
+        <image href="img/jonas-drawing.webp" x="0" y="-90" width="1030" height="1030" preserveAspectRatio="xMidYMin slice"
+               clip-path="url(#shape-clip)" opacity="0.13"/>
       </svg>
       <svg class="shape-layer__badge" id="badge" viewBox="0 0 1000 1000">
         <defs><path id="badge-circle" d="M500,500 m-430,0 a430,430 0 1,1 860,0 a430,430 0 1,1 -860,0"/></defs>
@@ -622,9 +639,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=17"></script>
+  <script src="zines.js?v=18"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=17"></script>
+  <script src="order.js?v=18"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -633,6 +650,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=17"></script>
+  <script type="module" src="hero.js?v=18"></script>
 </body>
 </html>
