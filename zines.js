@@ -17,8 +17,9 @@
 // Optional, used on the zine's own page (index.html?zine=<slug>):
 //   intro         paragraph under the hero (falls back to description)
 //   formats       little round chips in the details table, e.g. ['A5', '24 pp']
-//   spreads       photos for the drag slider, e.g. ['img/issue-01/spread-1.jpg', ...]
-//                 (until then the slider shows placeholder images built from the covers)
+//   spreads       photos for the ribbon gallery (click to enlarge), e.g. ['img/issue-01/spread-1.jpg', ...]
+//                 any shape works: wide spreads, single pages, photos. Until then it shows
+//                 placeholder images built from the covers
 //
 // Everything below is placeholder copy. Replace it with the real issues.
 window.JUNKI_ZINES = [

@@ -73,6 +73,8 @@
     .row:last-child { border-bottom: 1px solid var(--ink); }
     .label { font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase; padding-top: 3px; }
     .value { text-align: right; }
+    a.value { text-decoration: none; }
+    a.value:hover, a.value:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
     @media (max-width: 600px) {
       .nav { gap: 14px; top: 10px; }
@@ -96,7 +98,7 @@
     <p class="lead">Placeholder: a few sentences about who makes Junki, what it's about and how it's printed.</p>
     <div class="rows">
       <div class="row"><span class="label">Contact</span><span class="value">Placeholder email</span></div>
-      <div class="row"><span class="label">Instagram</span><span class="value">Placeholder handle</span></div>
+      <div class="row"><span class="label">Instagram</span><a class="value" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">@junkimag ↗</a></div>
       <div class="row"><span class="label">Based in</span><span class="value">Placeholder city</span></div>
     </div>
   </main>

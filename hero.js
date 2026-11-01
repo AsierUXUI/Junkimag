@@ -747,6 +747,14 @@ function init() {
 
   function open(index) { openDetail(index); }
 
+  // restored from the browser's back/forward cache: drop any loading screen
+  addEventListener('pageshow', e => {
+    if (!e.persisted) return;
+    document.documentElement.removeAttribute('data-preload');
+    preloader.classList.add('is-done');
+    dirty = true;
+  });
+
   // browser back / forward
   addEventListener('popstate', () => {
     const i = indexOfSlug(slugFromUrl());
@@ -778,21 +786,32 @@ function init() {
   }
 
   // ── Preload → intro ────────────────────────────────────────────────
+  // Coming back in the same session (e.g. back from About us): no loading
+  // screen, the zines just fan in again once their covers are ready.
+  let quick = false;
+  try { quick = sessionStorage.getItem('junki-visited') === '1'; sessionStorage.setItem('junki-visited', '1'); } catch (e) {}
+  if (quick) preloader.classList.add('is-done');
+
   (async () => {
-    await waitForFonts();
-    const first = items.filter(it => Math.abs(it.i - startIndex) <= CONFIG.renderRadius);
-    let done = 0;
-    const tick = () => { preloaderCount.textContent = Math.round(done / first.length * 100) + '%'; };
-    tick();
-    for (const it of first) {
-      await loadTextures(it);
-      done++; tick();
-      await new Promise(r => requestAnimationFrame(r)); // keep the counter moving
+    try {
+      await waitForFonts();
+      const first = items.filter(it => Math.abs(it.i - startIndex) <= CONFIG.renderRadius);
+      let done = 0;
+      const tick = () => { preloaderCount.textContent = Math.round(done / first.length * 100) + '%'; };
+      tick();
+      for (const it of first) {
+        await loadTextures(it);
+        done++; tick();
+        // let the counter repaint (a timeout, not a frame: frames pause in background tabs)
+        await new Promise(r => setTimeout(r, 0));
+      }
+      // compile shaders now, while the preloader is still up, so the intro doesn't stall
+      for (const it of items) it.group.visible = true;
+      renderer.compile(scene, camera);
+      for (const it of items) it.group.visible = false;
+    } catch (err) {
+      console.error(err);   // never leave the visitor on the loading screen
     }
-    // compile shaders now, while the preloader is still up, so the intro doesn't stall
-    for (const it of items) it.group.visible = true;
-    renderer.compile(scene, camera);
-    for (const it of items) it.group.visible = false;
     runIntro();
   })();
 
@@ -810,7 +829,7 @@ function init() {
       startMarks(startIndex);
       setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
     };
-    if (reduce) {
+    if (reduce || quick) {
       preloader.classList.add('is-done'); reveal(); return;
     }
     preloader.classList.add('is-covering');

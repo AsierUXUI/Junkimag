@@ -2,6 +2,7 @@
 // open (index.html?zine=<slug>). The 3D zine itself is drawn by hero.js.
 
 import { makeCover, COVER_W, COVER_H } from './covers.js';
+import { createGallery, createLightbox } from './gallery.js';
 
 const CONFIG = {
   titleCounter: 1.05,       // the title counter-scrolls so it looks pinned
@@ -113,107 +114,47 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     if (lenis) lenis.scrollTo(y, { duration: 1.4 }); else window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
   });
 
-  // ── Photo slider ───────────────────────────────────────────────────
-  const slider = (() => {
-    const el = $('slider');
-    let slides = [], step = 0, offset = 0, anim = null, drag = null, wheelTimer = null, token = 0;
+  // ── Photo gallery: bending ribbon + lightbox (gallery.js) ──────────
+  function mix(hex, amt) {
+    const n = parseInt(hex.slice(1), 16), p = [0xF2, 0xF0, 0xEB];
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(p[i] + (v - p[i]) * amt));
+    return `rgb(${c.join(',')})`;
+  }
 
-    function mix(hex, amt) {
-      const n = parseInt(hex.slice(1), 16), p = [0xF2, 0xF0, 0xEB];
-      const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(p[i] + (v - p[i]) * amt));
-      return `rgb(${c.join(',')})`;
-    }
+  async function sourcesFor(zine) {
+    if (zine.spreads && zine.spreads.length) return zine.spreads;
+    // Placeholders until real photos of the spreads are added in zines.js (spreads: [...])
+    const inkA = zine.inks?.[0] || '#FF48B0', inkB = zine.inks?.[1] || '#0078BF';
+    const [front, back] = await Promise.all([makeCover(zine, 'front', { cell: 8 }), makeCover(zine, 'back', { cell: 8 })]);
+    const SW = 1600, SH = 1146, ch = 860, cw = ch * COVER_W / COVER_H;
+    const make = draw => { const c = document.createElement('canvas'); c.width = SW; c.height = SH; draw(c.getContext('2d')); return c.toDataURL('image/jpeg', 0.86); };
+    const shadow = (ctx, fn) => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; fn(); ctx.restore(); };
+    return [
+      make(ctx => { ctx.fillStyle = mix(inkA, 0.22); ctx.fillRect(0, 0, SW, SH);
+        shadow(ctx, () => { ctx.drawImage(back, SW / 2 - cw, (SH - ch) / 2, cw, ch); ctx.drawImage(front, SW / 2, (SH - ch) / 2, cw, ch); }); }),
+      make(ctx => { ctx.fillStyle = mix(inkB, 0.25); ctx.fillRect(0, 0, SW, SH);
+        ctx.translate(SW / 2, SH / 2); ctx.rotate(-0.08); shadow(ctx, () => ctx.drawImage(front, -cw / 2, -ch / 2, cw, ch)); }),
+      make(ctx => { ctx.fillStyle = '#F4F1EA'; ctx.fillRect(0, 0, SW, SH);
+        ctx.fillStyle = inkB; for (let y = 20; y < SH; y += 26) for (let x = 20 + (y / 26 % 2) * 13; x < SW; x += 26) { const r = 9 * (x / SW); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = '#111'; ctx.font = '700 44px "Space Mono", monospace'; ctx.textAlign = 'center';
+        ctx.fillText('SPREAD PHOTOS COMING SOON', SW / 2, SH / 2 + 15); }),
+      make(ctx => { ctx.fillStyle = mix(inkA, 0.4); ctx.fillRect(0, 0, SW, SH);
+        ctx.translate(SW / 2, SH / 2); ctx.rotate(0.06); shadow(ctx, () => ctx.drawImage(back, -cw / 2, -ch / 2, cw, ch)); }),
+    ];
+  }
 
-    async function sourcesFor(zine) {
-      if (zine.spreads && zine.spreads.length) return zine.spreads;
-      // Placeholders until real photos of the spreads are added in zines.js (spreads: [...])
-      const inkA = zine.inks?.[0] || '#FF48B0', inkB = zine.inks?.[1] || '#0078BF';
-      const [front, back] = await Promise.all([makeCover(zine, 'front', { cell: 8 }), makeCover(zine, 'back', { cell: 8 })]);
-      const SW = 1600, SH = 1146, ch = 860, cw = ch * COVER_W / COVER_H;
-      const make = draw => { const c = document.createElement('canvas'); c.width = SW; c.height = SH; draw(c.getContext('2d')); return c.toDataURL('image/jpeg', 0.86); };
-      const shadow = (ctx, fn) => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; fn(); ctx.restore(); };
-      return [
-        make(ctx => { ctx.fillStyle = mix(inkA, 0.22); ctx.fillRect(0, 0, SW, SH);
-          shadow(ctx, () => { ctx.drawImage(back, SW / 2 - cw, (SH - ch) / 2, cw, ch); ctx.drawImage(front, SW / 2, (SH - ch) / 2, cw, ch); }); }),
-        make(ctx => { ctx.fillStyle = mix(inkB, 0.25); ctx.fillRect(0, 0, SW, SH);
-          ctx.translate(SW / 2, SH / 2); ctx.rotate(-0.08); shadow(ctx, () => ctx.drawImage(front, -cw / 2, -ch / 2, cw, ch)); }),
-        make(ctx => { ctx.fillStyle = '#F4F1EA'; ctx.fillRect(0, 0, SW, SH);
-          ctx.fillStyle = inkB; for (let y = 20; y < SH; y += 26) for (let x = 20 + (y / 26 % 2) * 13; x < SW; x += 26) { const r = 9 * (x / SW); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
-          ctx.fillStyle = '#111'; ctx.font = '700 44px "Space Mono", monospace'; ctx.textAlign = 'center';
-          ctx.fillText('SPREAD PHOTOS COMING SOON', SW / 2, SH / 2 + 15); }),
-        make(ctx => { ctx.fillStyle = mix(inkA, 0.4); ctx.fillRect(0, 0, SW, SH);
-          ctx.translate(SW / 2, SH / 2); ctx.rotate(0.06); shadow(ctx, () => ctx.drawImage(back, -cw / 2, -ch / 2, cw, ch)); }),
-      ];
-    }
-
-    async function setZine(zine) {
-      const my = ++token;
-      el.innerHTML = ''; slides = []; offset = 0; anim = null;
-      const sources = await sourcesFor(zine);
-      if (my !== token) return;   // another zine was opened meanwhile
-      slides = sources.map((src, i) => {
-        const s = document.createElement('div'); s.className = 'slide';
-        s.setAttribute('role', 'group'); s.setAttribute('aria-label', `${i + 1} of ${sources.length}`);
-        const img = new Image(); img.className = 'slide__img'; img.alt = ''; img.src = src; img.draggable = false;
-        s.appendChild(img); el.appendChild(s);
-        return { el: s, img };
-      });
-      measure(); layout();
-    }
-    function measure() { if (slides.length) { step = slides[0].el.offsetWidth + CONFIG.slideGap; snapTo(Math.round(offset / step) * step, 0); } }
-    function layout() {
-      if (!slides.length || !step) return;
-      const L = slides.length * step, sw = slides[0].el.offsetWidth;
-      slides.forEach((s, i) => {
-        let x = ((i * step + offset) % L + L) % L;
-        if (x > L / 2) x -= L;
-        s.el.style.transform = `translate3d(${x.toFixed(1)}px,0,0)`;
-        const shift = clamp(-x * CONFIG.slideParallax, -0.15 * sw, 0.15 * sw);
-        s.img.style.transform = `translate3d(${shift.toFixed(1)}px,0,0)`;
-      });
-    }
-    function snapTo(target, duration = CONFIG.snapDuration) {
-      if (!duration || reduce) { offset = target; anim = null; layout(); return; }
-      anim = { from: offset, to: target, start: performance.now(), dur: duration * 1000 };
-    }
-    function tick(now) {
-      if (!anim) return;
-      const t = clamp((now - anim.start) / anim.dur, 0, 1);
-      offset = lerp(anim.from, anim.to, easeOutCubic(t));
-      if (t >= 1) anim = null;
-      layout();
-    }
-    el.addEventListener('pointerdown', e => {
-      if (e.button > 0 || !step) return;
-      drag = { x0: e.clientX, o0: offset, lastX: e.clientX, lastT: performance.now(), v: 0 };
-      anim = null; el.classList.add('is-dragging'); el.setPointerCapture(e.pointerId);
-    });
-    el.addEventListener('pointermove', e => {
-      if (!drag) return;
-      const now = performance.now(), dt = Math.max(1, now - drag.lastT);
-      drag.v = lerp(drag.v, (e.clientX - drag.lastX) / dt, 0.4); drag.lastX = e.clientX; drag.lastT = now;
-      offset = drag.o0 + (e.clientX - drag.x0); layout();
-    });
-    const end = () => {
-      if (!drag) return;
-      const thrown = offset + drag.v * 220;   // inertia
-      drag = null; el.classList.remove('is-dragging');
-      snapTo(Math.round(thrown / step) * step);
-    };
-    el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', end);
-    // horizontal trackpad swipes move the slider; vertical scrolling passes through
-    el.addEventListener('wheel', e => {
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || !step) return;
-      e.preventDefault(); anim = null;
-      offset -= e.deltaX; layout();
-      clearTimeout(wheelTimer); wheelTimer = setTimeout(() => snapTo(Math.round(offset / step) * step), 140);
-    }, { passive: false });
-    el.addEventListener('pointerenter', () => showPill('Drag'));
-    el.addEventListener('pointerleave', () => showPill(null));
-    el.setAttribute('data-lenis-prevent-touch', '');
-    return { setZine, tick, measure };
-  })();
+  const lightbox = createLightbox({ onOpen: () => lenis?.stop(), onClose: () => { if (visible) lenis?.start(); } });
+  const gallery = createGallery({ root: $('slider'), showPill, onLightbox: (srcs, i, from) => lightbox.open(srcs, i, from) });
+  let galleryToken = 0;
+  const slider = {
+    async setZine(zine) {
+      const my = ++galleryToken;
+      const srcs = await sourcesFor(zine);
+      if (my === galleryToken) gallery.setSources(srcs);
+    },
+    tick() {},
+    measure() { gallery.measure(); },
+  };
 
   // ── Other issues ───────────────────────────────────────────────────
   const row = $('others-row');

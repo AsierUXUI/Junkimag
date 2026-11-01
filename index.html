@@ -173,6 +173,11 @@
     .notes { position: absolute; right: 14px; bottom: 14px; width: clamp(200px, 17vw, 280px); }
     .notes .meta__row:last-child { padding-bottom: 0; }
 
+    .social {
+      position: absolute; left: 14px; bottom: 14px; text-decoration: none;
+      font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
+    }
+    .social:hover, .social:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
     .prompt {
       position: absolute; left: 50%; bottom: 28px; transform: translate(-50%, 10px); opacity: 0;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
@@ -240,6 +245,7 @@
       .notes { left: 16px; right: 16px; bottom: 56px; width: auto; }
       .order-cta { top: auto; bottom: 16px; right: 16px; position: fixed; }
       .prompt { display: none; }
+      .social { left: 16px; bottom: 22px; }
       .shape-layer__shape { width: 150vw; top: 62%; }
       .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
     }
@@ -347,14 +353,40 @@
     .btn:hover, .btn:focus-visible { background: var(--pink); color: var(--ink); }
     .btn:hover::before, .btn:focus-visible::before { background: var(--ink); }
 
-    /* ── Photo slider ── */
-    .slider { position: relative; height: 43.7vw; overflow: hidden; touch-action: pan-y; cursor: grab; user-select: none; margin-bottom: 160px; }
-    .slider.is-dragging { cursor: grabbing; }
-    .slide {
-      position: absolute; top: 0; left: 50%; width: 61vw; height: 43.7vw; margin-left: -30.5vw;
-      border-radius: 15px; overflow: hidden; background: var(--tint); will-change: transform;
+    /* ── Photo gallery: bending ribbon (gallery.js) + lightbox ── */
+    .gallery-head {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+      padding: 0 var(--gutter); margin-bottom: 8px; position: relative; z-index: 3;
     }
-    .slide__img { position: absolute; top: 0; left: 50%; height: 100%; width: 132%; margin-left: -66%; object-fit: cover; will-change: transform; pointer-events: none; }
+    .gallery-head h2 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 3.4vw, 52px); letter-spacing: -0.04em; text-transform: uppercase; line-height: 1; }
+    .slider.ribbon {
+      position: relative; height: min(78vh, 62vw); margin-bottom: 140px; z-index: 3;
+      touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
+    }
+    .slider.ribbon.is-dragging { cursor: grabbing; }
+    .ribbon__gl { position: absolute; left: 0; width: 100%; pointer-events: none; }
+    .lightbox {
+      position: fixed; inset: 0; z-index: 900; background: rgba(242, 240, 235, 0.96);
+      opacity: 0; visibility: hidden; transition: opacity .35s var(--ease-io), visibility 0s .35s;
+    }
+    .lightbox.is-open { opacity: 1; visibility: visible; transition-delay: 0s; }
+    .lightbox__img {
+      position: absolute; object-fit: contain; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.18);
+      transition: transform .7s var(--ease-out); will-change: transform;
+    }
+    .lightbox__btn {
+      position: absolute; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--ink);
+      background: var(--paper); color: var(--ink); font-size: 18px; cursor: pointer; display: grid; place-items: center;
+      transition: background .25s var(--ease-io), color .25s var(--ease-io);
+    }
+    .lightbox__btn:hover, .lightbox__btn:focus-visible { background: var(--ink); color: var(--paper); }
+    .lightbox__close { top: 18px; right: 18px; }
+    .lightbox__prev { left: 18px; top: 50%; margin-top: -23px; }
+    .lightbox__next { right: 18px; top: 50%; margin-top: -23px; }
+    .lightbox.is-single .lightbox__prev, .lightbox.is-single .lightbox__next { display: none; }
+    .lightbox__count { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); }
+    html.lightbox-open, html.lightbox-open body { overflow: hidden; }
+    .reduced .lightbox__img { transition: none; }
 
     /* ── Other issues ── */
     .others { padding-bottom: 160px; }
@@ -397,7 +429,8 @@
     .site-footer__cols { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
     .site-footer__links { display: flex; flex-direction: column; gap: 6px; font-family: var(--display); font-size: 32px; letter-spacing: -0.03em; }
     .site-footer__links a { text-decoration: none; }
-    .site-footer__links a:hover { color: var(--pink); }
+    .site-footer__links a:hover, .site-footer__contact a:hover { color: var(--pink); }
+    .site-footer__contact a { text-decoration: none; }
     .site-footer__contact { text-align: right; }
     .site-footer__word {
       font-family: var(--display); font-weight: 800; font-size: 31vw; line-height: 0.78; letter-spacing: -0.06em;
@@ -420,8 +453,8 @@
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
       .zmeta.is-revealed .zmeta__col + .zmeta__col::before { transform: scaleX(1); }
       .zmeta__value { font-size: 18px; }
-      .slider { height: 61vw; margin-bottom: 100px; }
-      .slide { width: 85vw; height: 61vw; margin-left: -42.5vw; }
+      .slider.ribbon { height: 92vw; margin-bottom: 90px; }
+      .lightbox__prev, .lightbox__next { top: auto; bottom: 14px; margin-top: 0; }
       .others__title { font-size: 14vw; margin-bottom: 36px; }
       .card { width: 70vw; height: calc(70vw * 1.31); }
       .site-footer__links { font-size: 24px; }
@@ -471,6 +504,7 @@
       <div class="meta swap" id="meta"></div>
       <div class="notes swap" id="notes"></div>
       <p class="prompt">Scroll, drag or use ← → to browse</p>
+      <a class="social" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram ↗</a>
     </div>
   </section>
 
@@ -502,7 +536,11 @@
     </section>
 
     <section aria-label="Inside the issue">
-      <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Pages from this issue"></div>
+      <div class="gallery-head">
+        <h2>Inside</h2>
+        <p class="label">Drag · click a photo to enlarge</p>
+      </div>
+      <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Photos from this issue"></div>
     </section>
 
     <section class="others" aria-labelledby="others-title">
@@ -518,9 +556,9 @@
         </nav>
         <div class="site-footer__contact">
           <p class="label">Contact</p>
-          <!-- Placeholder: replace with the real contact details -->
+          <!-- Placeholder email: replace with the real one -->
           <p>Placeholder email</p>
-          <p>Placeholder Instagram</p>
+          <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram @junkimag ↗</a></p>
         </div>
       </div>
       <p class="site-footer__word" data-reveal="chars" aria-hidden="true">JUNKI</p>
