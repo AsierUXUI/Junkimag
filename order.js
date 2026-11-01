@@ -10,6 +10,7 @@
   var PAYMENT_METHODS = ['Bizum', 'Bank transfer', 'PayPal'];
   var PICKUP_NOTE = "We'll email you to arrange a time and place.";   // placeholder
   var MAX_QTY = 10;
+  var CONTACT_EMAIL = 'junkimagazine@comic.com';   // shown if an order fails to send
 
   // ── EmailJS setup ────────────────────────────────────────────────────
   // 1. Create a free account at https://emailjs.com
@@ -259,7 +260,7 @@
       doneEl.querySelector('.done-close').focus();
     } catch (err) {
       status.hidden = false;
-      status.textContent = "Sorry, the order didn't go through. Please try again, or email us directly.";
+      status.textContent = "Sorry, the order didn't go through. Please try again, or email us at " + CONTACT_EMAIL + '.';
       console.error(err);
     } finally {
       submit.disabled = false; submit.textContent = 'Send order';

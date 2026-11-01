@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Junki Magazine</title>
-  <link rel="icon" type="image/png" href="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png">
-  <link rel="apple-touch-icon" href="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="img/icon-512.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <meta name="description" content="Junki Magazine: zines. Scroll through the issues and order a copy.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -439,9 +440,10 @@
     .site-footer__links a:hover, .site-footer__contact a:hover { color: var(--pink); }
     .site-footer__contact a { text-decoration: none; }
     .site-footer__contact { text-align: right; }
-    .site-footer__word {
-      font-family: var(--display); font-weight: 800; font-size: 31vw; line-height: 0.78; letter-spacing: -0.06em;
-      color: var(--pink); text-align: center; margin: 80px 0 -4vw; white-space: nowrap;
+    /* the Junki logo, printed pink: the PNG is used as a mask so it takes any ink */
+    .site-footer__logo {
+      width: 92vw; aspect-ratio: 647 / 294; margin: 72px auto -3vw; background: var(--pink);
+      -webkit-mask: url(img/junki-logo.png) center / contain no-repeat; mask: url(img/junki-logo.png) center / contain no-repeat;
     }
 
     /* ── Phones ── */
@@ -484,7 +486,7 @@
   <header class="site-header">
     <nav class="nav" aria-label="Main">
       <a class="nav__logo" href="index.html" data-home aria-label="Junki Magazine, home">
-        <img src="https://asset.mmm.page/e7/a80d1042854b77b4f64611bb2ef2f1/ldxppd.png" alt="Junki Magazine">
+        <img src="img/junki-logo.png" alt="Junki Magazine">
       </a>
       <a class="nav__link is-active" href="index.html" data-home aria-current="page">Zines</a>
       <a class="nav__link" href="about.html">About us</a>
@@ -567,12 +569,11 @@
         </nav>
         <div class="site-footer__contact">
           <p class="label">Contact</p>
-          <!-- Placeholder email: replace with the real one -->
-          <p>Placeholder email</p>
+          <p><a href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></p>
           <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram @junkimag ↗</a></p>
         </div>
       </div>
-      <p class="site-footer__word" data-reveal="chars" aria-hidden="true">JUNKI</p>
+      <div class="site-footer__logo" role="img" aria-label="Junki Magazine"></div>
     </footer>
   </div>
 

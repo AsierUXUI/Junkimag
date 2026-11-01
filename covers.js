@@ -25,6 +25,10 @@ function loadImage(src) {
   return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
 }
 
+// The real Junki logo (img/junki-logo.png), printed in a zine's ink on the covers.
+let logoImg = null;
+const logoReady = loadImage(new URL('./img/junki-logo.png', import.meta.url).href).then(i => { logoImg = i; }).catch(() => {});
+
 let fontsReady = null;
 export function waitForFonts() {
   if (!fontsReady) {
@@ -32,11 +36,28 @@ export function waitForFonts() {
       Promise.all([
         document.fonts.load(`800 200px ${DISPLAY}`),
         document.fonts.load(`700 40px ${MONO}`),
+        logoReady,
       ]),
       new Promise(r => setTimeout(r, 2500)),
     ]).catch(() => {});
   }
   return fontsReady;
+}
+
+// Draw the logo in one ink colour, `w` wide, top-left at (x, y). Falls back to type if it didn't load.
+function drawLogo(ctx, ink, x, y, w) {
+  if (!logoImg) {
+    ctx.save(); ctx.fillStyle = ink; ctx.font = `800 ${w * 0.3}px ${DISPLAY}`; ctx.textBaseline = 'top';
+    ctx.fillText('JUNKI', x, y); ctx.restore();
+    return w * 0.36;
+  }
+  const h = w * logoImg.height / logoImg.width;
+  const t = canvas(Math.round(w), Math.round(h)), tx = t.getContext('2d');
+  tx.drawImage(logoImg, 0, 0, t.width, t.height);
+  tx.globalCompositeOperation = 'source-in';
+  tx.fillStyle = ink; tx.fillRect(0, 0, t.width, t.height);
+  ctx.drawImage(t, x, y);
+  return h;
 }
 
 // Turn a grey "tint" layer into halftone dots of one ink.
@@ -132,13 +153,9 @@ function drawFrontArt(zine, rand) {
 
   // Ink A solid: masthead and issue number
   sa.textBaseline = 'alphabetic';
-  sa.font = `800 300px ${DISPLAY}`;
-  sa.save(); sa.translate(W / 2, 330);
-  const m = sa.measureText('JUNKI'); const fit = Math.min(1, (W - 110) / m.width);
-  sa.scale(fit, fit * 1.12); sa.textAlign = 'center'; sa.fillText('JUNKI', 0, 0); sa.restore();
-  sa.font = `700 34px ${MONO}`; sa.textAlign = 'left';
-  sa.fillText('MAGAZINE', 64, 410);
-  sa.textAlign = 'right'; sa.fillText(String(zine.year || ''), W - 64, 410);
+  const logoH = drawLogo(sa, inkA, 56, 56, W - 112);   // the real logo, with "MAGAZINE" built in
+  sa.font = `700 34px ${MONO}`;
+  sa.textAlign = 'right'; sa.fillText(String(zine.year || ''), W - 64, 56 + logoH + 46);
 
   // Ink B solid: big issue number and small marks
   const isSet = zine.kind === 'set';
@@ -165,7 +182,7 @@ function drawBackArt(zine, rand) {
   ta.globalAlpha = 0.25; ta.beginPath(); ta.arc(W * 0.78, H * 0.28, 220, 0, Math.PI * 2); ta.fill();
 
   sa.fillStyle = inkA; sb.fillStyle = inkB;
-  sa.font = `800 120px ${DISPLAY}`; sa.textAlign = 'left'; sa.fillText('JUNKI', 64, 190);
+  drawLogo(sa, inkA, 64, 70, 340);
   sa.font = `700 34px ${MONO}`; sa.fillText(zine.issue || '', 64, 250);
 
   sb.font = `700 28px ${MONO}`; sb.textAlign = 'left';
