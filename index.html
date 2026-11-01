@@ -11,11 +11,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- SITE VERSION: when the site changes, raise every "?v=" number on this page and in
+       catalog.html (here, in the import map and the script tags) so visitors' browsers
+       load the new files instead of old cached ones. -->
   <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "./hero.js": "./hero.js?v=12",
+        "./detail.js": "./detail.js?v=12",
+        "./covers.js": "./covers.js?v=12",
+        "./zine-mesh.js": "./zine-mesh.js?v=12",
+        "./wheel-steps.js": "./wheel-steps.js?v=12",
+        "./trail.js": "./trail.js?v=12",
+        "./gallery.js": "./gallery.js?v=12"
       }
     }
   </script>
@@ -580,9 +590,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js"></script>
+  <script src="zines.js?v=12"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js"></script>
+  <script src="order.js?v=12"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -591,6 +601,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js"></script>
+  <script type="module" src="hero.js?v=12"></script>
 </body>
 </html>
