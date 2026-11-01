@@ -143,7 +143,11 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     ];
   }
 
-  const lightbox = createLightbox({ onOpen: () => lenis?.stop(), onClose: () => { if (visible) lenis?.start(); } });
+  const lightbox = createLightbox({
+    onOpen: () => { lenis?.stop(); gallery.setPaused(true); },
+    onClose: () => { if (visible) lenis?.start(); gallery.setPaused(false); },
+  });
+  const pin = $('ribbon-pin');
   const gallery = createGallery({ root: $('slider'), showPill, onLightbox: (srcs, i, from) => lightbox.open(srcs, i, from) });
   let galleryToken = 0;
   const slider = {
@@ -252,6 +256,9 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     root.style.setProperty('--lead-o', (1 - clamp((sy - range * 0.35) / (range * 0.5), 0, 1)).toFixed(3));
     root.classList.toggle('is-scrolled', sy > 30);
     slider.tick(now);
+    // scrolling through the pinned gallery section moves the ribbon
+    const pr = pin.getBoundingClientRect();
+    gallery.setScrollProgress(clamp(-pr.top / Math.max(1, pr.height - innerHeight), 0, 1));
   }
 
   return { show, hide, tick, scroll, get zine() { return current; } };

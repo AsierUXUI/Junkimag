@@ -3,13 +3,14 @@
 // Only on devices with a mouse, and not when reduced motion is on.
 
 const CONFIG = {
-  spacing: 9,          // px between dots along the path
-  size: 5.5,           // dot radius in px
-  sizeJitter: 0.45,    // ± fraction
-  scatter: 2.5,        // px of random sideways wobble, so it reads as print, not a line
-  life: 0.55,          // seconds a dot lasts
-  misregister: [2.5, 1.8],   // px offset of the second ink
-  maxDots: 160,
+  spacing: 13,         // px between dots along the path
+  size: 2.4,           // dot radius in px
+  sizeJitter: 0.35,    // ± fraction
+  scatter: 1,          // px of random sideways wobble, so it reads as print, not a line
+  life: 0.28,          // seconds a dot lasts (short tail)
+  misregister: [1.2, 0.9],   // px offset of the second ink
+  opacity: 0.7,
+  maxDots: 40,
 };
 
 export function createTrail({ inks = ['#FF48B0', '#0078BF'] } = {}) {
@@ -62,6 +63,7 @@ export function createTrail({ inks = ['#FF48B0', '#0078BF'] } = {}) {
   function draw() {
     const now = performance.now() / 1000;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = CONFIG.opacity;
     dots = dots.filter(d => now - d.born < CONFIG.life);
     const [mx, my] = CONFIG.misregister;
     // second ink first, offset, then the first ink on top; multiply makes the overlap a third colour

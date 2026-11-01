@@ -18,6 +18,8 @@ const CONFIG = {
   dent: 0.1,
   haze: 0.4,             // how far the far side fades toward the paper colour
   mobileBend: 0.45,      // ribbon strength on phones
+  scrollDistance: 2.4,   // × gallery width the ribbon travels while you scroll through the pinned section
+  autoSpeed: 28,         // px per second of gentle drift when nobody is touching it (0 = off)
 };
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -139,7 +141,7 @@ export function createGallery({ root, showPill, onLightbox }) {
 
   let cards = [], sources = [], W = 0, H = 0, cardH = 0, total = 0;
   let target = 0, current = 0, vel = 0, hover = -1, visible = false, running = false, token = 0;
-  let drag = null, justDragged = false;
+  let drag = null, justDragged = false, scrollP = null, paused = false;
 
   // ── Layout ─────────────────────────────────────────────────────────
   function measure() {
@@ -212,6 +214,9 @@ export function createGallery({ root, showPill, onLightbox }) {
     if (!visible || !renderer) { running = false; return; }
     requestAnimationFrame(frame);
     const ratio = lastT ? Math.min((now - lastT) / (1000 / 60), 3) : 1; lastT = now;
+    // gentle drift while nobody is touching it
+    const drifting = CONFIG.autoSpeed > 0 && !reduce && !drag && hover < 0 && !paused && cards.length > 0;
+    if (drifting) target += CONFIG.autoSpeed * ratio / 60;
     const k = 1 - Math.pow(1 - CONFIG.lerp, ratio);
     current += (target - current) * (reduce ? 1 : k);
     const n = Math.tanh((target - current) / CONFIG.velocityNorm);
@@ -238,7 +243,7 @@ export function createGallery({ root, showPill, onLightbox }) {
       if (Math.abs(a - c.alpha) > 0.002 || c.hover > 0.002 && c.hover < 0.998) busy = true;
     }
     renderer.render(scene, camera);
-    if (!busy && !drag) running = false;   // idle: stop until something moves
+    if (!busy && !drag && !drifting) running = false;   // idle: stop until something moves
     if (!running) lastT = 0;
   }
   function wake() { if (!running && visible) { running = true; requestAnimationFrame(frame); } }
@@ -315,7 +320,17 @@ export function createGallery({ root, showPill, onLightbox }) {
   root.setAttribute('data-lenis-prevent-touch', '');
   list.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) onLightbox(sources, Number(b.dataset.i), null); });
 
-  return { setSources, measure: () => { measure(); wake(); } };
+  // Page scroll through the pinned section (0 → 1) moves the ribbon along.
+  function setScrollProgress(p) {
+    if (scrollP === null) { scrollP = p; return; }
+    const d = p - scrollP; scrollP = p;
+    if (Math.abs(d) < 1e-5 || !W) return;
+    target += d * W * CONFIG.scrollDistance;
+    wake();
+  }
+  function setPaused(on) { paused = on; wake(); }
+
+  return { setSources, setScrollProgress, setPaused, measure: () => { measure(); wake(); } };
 }
 
 // ── Lightbox ─────────────────────────────────────────────────────────
