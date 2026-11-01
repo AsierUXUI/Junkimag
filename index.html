@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=14",
-        "./detail.js": "./detail.js?v=14",
-        "./covers.js": "./covers.js?v=14",
-        "./zine-mesh.js": "./zine-mesh.js?v=14",
-        "./wheel-steps.js": "./wheel-steps.js?v=14",
-        "./trail.js": "./trail.js?v=14",
-        "./gallery.js": "./gallery.js?v=14"
+        "./hero.js": "./hero.js?v=15",
+        "./detail.js": "./detail.js?v=15",
+        "./covers.js": "./covers.js?v=15",
+        "./zine-mesh.js": "./zine-mesh.js?v=15",
+        "./wheel-steps.js": "./wheel-steps.js?v=15",
+        "./trail.js": "./trail.js?v=15",
+        "./gallery.js": "./gallery.js?v=15"
       }
     }
   </script>
@@ -447,9 +447,11 @@
     /* Jonas's drawing as faint cream linework behind the footer */
     .site-footer::before {
       content: ''; position: absolute; inset: 0; pointer-events: none;
-      background: var(--cream); opacity: .14;
-      -webkit-mask: url(img/jonas-drawing.webp) center top / min(1400px, 160vw) auto repeat;
-      mask: url(img/jonas-drawing.webp) center top / min(1400px, 160vw) auto repeat;
+      background: var(--cream); opacity: .24;
+      -webkit-mask-image: url(img/jonas-drawing.webp); mask-image: url(img/jonas-drawing.webp);
+      -webkit-mask-size: 1400px auto; mask-size: 1400px auto;
+      -webkit-mask-position: center top; mask-position: center top;
+      -webkit-mask-repeat: repeat; mask-repeat: repeat;
     }
     .site-footer > * { position: relative; }
     .site-footer__cols { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
@@ -598,9 +600,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=14"></script>
+  <script src="zines.js?v=15"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=14"></script>
+  <script src="order.js?v=15"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -609,6 +611,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=14"></script>
+  <script type="module" src="hero.js?v=15"></script>
 </body>
 </html>
