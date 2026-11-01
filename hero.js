@@ -47,10 +47,10 @@ const CONFIG = {
   // intro
   preloadSpin: 1.1, preloadRiseFrom: 3, preloadRiseDepth: 0.7, preloadFanDuration: 1.15, preloadStagger: 0.07,
   // opening a zine: the others drop back out of view, the chosen one moves into the detail hero
-  openDuration: 1.1, closeDuration: 0.9, othersRecede: 4, othersDrop: 2.5, othersRate: 4,
+  openDuration: 1.1, closeDuration: 0.9, othersRecede: 4, othersDrop: 2.5, othersRate: 4, othersOpenRate: 11, othersHideAt: 0.45,
   // detail hero choreography (scroll-driven)
   detailScrollRange: 0.45, detailRise: 0.24, detailTilt: 20,
-  detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75, detailMobileRestTop: 0.52,
+  detailScaleFrom: 1.25, detailScaleTo: 0.8, detailMobileScaleFrom: 1.1, detailMobileScaleTo: 0.75, detailMobileRestTop: 0.52, detailMobileGap: 36,
   detailExposure: 1.0, detailKeyIntensity: 1.3,
   // crop marks around the zine in front (px)
   marksEnabled: 1, marksGap: 10, marksLength: 22, marksDrawTime: 0.5,
@@ -219,6 +219,11 @@ function init() {
     gallery.position.y = -(layout.drop || 0);
     gallery.scale.setScalar(layout.scale);
     dirty = true;
+    // resizing clears the canvas; draw again right away so it never shows a blank frame
+    // (phones resize when the address bar shows or hides, e.g. as a zine page opens)
+    gallery.updateMatrixWorld(true);
+    for (const it of items) if (it.override) applyOverride(it);   // an open zine keeps its place
+    renderer.render(scene, camera);
   }
   addEventListener('resize', resize);
   resize();
@@ -235,7 +240,8 @@ function init() {
     // the row steps back while a zine is open, and comes back after
     const awayTarget = mode === 'detail' ? 1 : 0;
     const prevAway = away;
-    away = reduce ? awayTarget : away + (awayTarget - away) * damp(CONFIG.othersRate, dt);
+    // opening: the rest of the row clears out quickly; closing: it comes back at the normal pace
+    away = reduce ? awayTarget : away + (awayTarget - away) * damp(awayTarget ? CONFIG.othersOpenRate : CONFIG.othersRate, dt);
     if (Math.abs(away - awayTarget) < 1e-3) away = awayTarget;
 
     // spring on the index (semi-implicit Euler, two sub-steps for stability)
@@ -262,7 +268,7 @@ function init() {
       const d = it.i - x, ad = Math.abs(d);
       const inRange = ad <= CONFIG.renderRadius + 0.5 || !!it.override;
       it.group.visible = inRange && (introStart >= 0 || reduce);
-      if (inRange && it.i !== detailIndex && !it.override && away > 0.97) it.group.visible = false;
+      if (inRange && it.i !== detailIndex && !it.override && (mode === 'detail' ? away > CONFIG.othersHideAt : away > 0.97)) it.group.visible = false;
       if (!inRange) continue;
       if (!it.loaded) loadTextures(it);
 
@@ -397,8 +403,11 @@ function init() {
     const H0 = mobile ? Math.min(0.7 * W / 0.705, 0.8 * H) : Math.min(0.569 * W, 0.85 * H);
     const p = clamp(sy / (CONFIG.detailScrollRange * H), 0, 1);
     // where the zine's top edge rests before scrolling: phones start it right under the order button
-    const restTop = mobile ? CONFIG.detailMobileRestTop : 0.8;
-    const cyPage = restTop * H + H0 / 2 - CONFIG.detailRise * H * p + offsetVh * H;
+    // where the zine's top edge rests before scrolling: on phones just under the order button
+    const s0 = mobile ? CONFIG.detailMobileScaleFrom : CONFIG.detailScaleFrom;
+    const btnBottom = mobile ? detail.heroButtonBottom() : 0;
+    const restCy = btnBottom ? btnBottom + CONFIG.detailMobileGap + H0 * s0 / 2 : (mobile ? CONFIG.detailMobileRestTop : 0.8) * H + H0 / 2;
+    const cyPage = restCy - CONFIG.detailRise * H * p + offsetVh * H;
     const cyView = cyPage - sy;
     const scale = lerp(mobile ? CONFIG.detailMobileScaleFrom : CONFIG.detailScaleFrom, mobile ? CONFIG.detailMobileScaleTo : CONFIG.detailScaleTo, p);
     const k = visH() / H;   // world units per CSS pixel on the z = 0 plane

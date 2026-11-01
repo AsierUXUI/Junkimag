@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=24",
-        "./detail.js": "./detail.js?v=24",
-        "./covers.js": "./covers.js?v=24",
-        "./zine-mesh.js": "./zine-mesh.js?v=24",
-        "./wheel-steps.js": "./wheel-steps.js?v=24",
-        "./trail.js": "./trail.js?v=24",
-        "./gallery.js": "./gallery.js?v=24"
+        "./hero.js": "./hero.js?v=28",
+        "./detail.js": "./detail.js?v=28",
+        "./covers.js": "./covers.js?v=28",
+        "./zine-mesh.js": "./zine-mesh.js?v=28",
+        "./wheel-steps.js": "./wheel-steps.js?v=28",
+        "./trail.js": "./trail.js?v=28",
+        "./gallery.js": "./gallery.js?v=28"
       }
     }
   </script>
@@ -303,14 +303,16 @@
       font-family: var(--display); font-weight: 800; font-size: 12.46vw; line-height: 0.9; letter-spacing: -0.04em;
       text-transform: uppercase; text-align: center; color: var(--pink); text-wrap: balance;
     }
-    .zhero__meta {
-      position: absolute; left: 0; right: 0; top: 80%; z-index: 1;
-      display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 0;
-      font-family: var(--display); font-weight: 500; font-size: 2.38vw; line-height: 1.1; letter-spacing: -0.03em;
+    /* back to the carousel: top left of the zine page */
+    .zhero__back {
+      position: absolute; left: var(--gutter); top: 22px; z-index: 3;
+      display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink);
+      font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+      animation: back-in .6s var(--ease-out) .3s both;
     }
-    .zhero__meta-left { grid-column: 2 / span 3; text-decoration: none; }
-    .zhero__meta-left:hover .rvl-unit { text-decoration: underline; text-underline-offset: .12em; text-decoration-thickness: 2px; }
-    .zhero__meta-right { grid-column: 8 / span 4; text-align: right; }
+    .zhero__back svg { transition: transform .3s var(--ease-io); }
+    .zhero__back:hover svg, .zhero__back:focus-visible svg { transform: translateX(-4px); }
+    @keyframes back-in { from { opacity: 0; transform: translateX(8px); } }
     /* description + order button under the title; they sit in front of the zine as it rises */
     .zhero__lead {
       position: absolute; left: 50%; top: calc(31% + 6.6vw); z-index: 3; width: min(560px, 88vw);
@@ -346,7 +348,7 @@
     .zmeta { position: relative; z-index: 3; padding: 380px 0 140px; }
     .zmeta__table {
       position: relative; width: calc(8 / 12 * 100%); margin: 0 auto;
-      display: grid; grid-template-columns: 477fr 238fr 133fr;
+      display: grid; grid-template-columns: 1.5fr 1.3fr 1fr;
     }
     .zmeta__rule { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hair); transform-origin: left; transform: scaleX(0); transition: transform .9s cubic-bezier(0.22, 1, 0.36, 1); }
     .zmeta__col { position: relative; padding: 28px 20px 0; }
@@ -361,9 +363,11 @@
     .zmeta__label { color: var(--pink); margin-bottom: 10px; filter: brightness(.85); }
     .zmeta__value { font-size: 1.46vw; line-height: 1.3; letter-spacing: -0.03em; }
     .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    /* format details as pills (sized to the text) */
+    .chips { gap: 6px; }
     .chip {
-      width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(17,17,17,.25);
-      display: grid; place-items: center; font-size: 13px; font-weight: 500;
+      display: inline-flex; align-items: center; height: 34px; padding: 0 14px; white-space: nowrap;
+      border-radius: 500px; border: 1px solid rgba(17,17,17,.25); font-size: 13px; font-weight: 500;
     }
     .zmeta__cta { display: flex; justify-content: center; margin-top: 72px; }
     .btn {
@@ -479,16 +483,14 @@
     /* ── Phones ── */
     @media (max-width: 767px) {
       :root { --gutter: 16px; }
-      .zhero__title { font-size: 16vw; top: 30%; }
-      .zhero__lead { top: calc(30% + 10vw); }
+      .zhero__title { font-size: 16vw; top: 150px; }   /* right under the Back link */
+      .zhero__lead { top: calc(150px + 10vw); }
       .zhero__desc { font-size: 16px; margin-bottom: 16px; }
       .zhero__stage { height: 94vh; height: 94svh; }
       .zmeta { padding-top: 24px; padding-bottom: 32px; }
       .zmeta__cta { margin-top: 36px; }
       .scroll-hint { bottom: 72px; }
-      .zhero__meta { top: 92px; font-size: 18px; grid-template-columns: 1fr 1fr; padding: 0 var(--gutter); }
-      .zhero__meta-left { grid-column: 1; }
-      .zhero__meta-right { grid-column: 2; }
+      .zhero__back { top: 84px; }
       .zmeta__table { width: auto; margin: 0 var(--gutter); grid-template-columns: 1fr; }
       .zmeta__col { padding: 20px 0; }
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
@@ -575,10 +577,10 @@
           <p class="zhero__desc" id="hero-desc" data-reveal="lines" data-delay="250"></p>
           <button class="btn zhero__cta" type="button" id="hero-order" data-reveal-self>Order a copy</button>
         </div>
-        <div class="zhero__meta">
-          <a class="zhero__meta-left" href="index.html" data-home data-reveal="lines" data-delay="180" id="hero-left">All<br>zines</a>
-          <p class="zhero__meta-right" data-reveal="lines" data-delay="260" id="hero-right"></p>
-        </div>
+        <a class="zhero__back" href="index.html" data-home aria-label="Back to all zines">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+          <span>Back</span>
+        </a>
         <button class="scroll-hint" type="button" id="scroll-hint">
           <span>Scroll to look inside</span>
           <span class="scroll-hint__arrow" aria-hidden="true"></span>
@@ -625,9 +627,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=24"></script>
+  <script src="zines.js?v=28"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=24"></script>
+  <script src="order.js?v=28"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -636,6 +638,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=24"></script>
+  <script type="module" src="hero.js?v=28"></script>
 </body>
 </html>

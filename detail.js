@@ -90,7 +90,6 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     root.style.setProperty('--tint', `color-mix(in srgb, ${inkA} 18%, #F2F0EB)`);
 
     titleEl.dataset.text = zine.title;
-    $('hero-right').dataset.src = `${esc(zine.issue || '')}<br>${esc(window.junkiPrice(zine))}`;
     $('hero-desc').dataset.src = esc(zine.intro || zine.description || '');
     $('hero-order').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
 
@@ -264,5 +263,13 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     if (pr.height > innerHeight + 10) gallery.setScrollProgress(clamp(-pr.top / (pr.height - innerHeight), 0, 1));
   }
 
-  return { show, hide, tick, scroll, get zine() { return current; } };
+  // Page-y (px) of the bottom of the "Order a copy" button in the zine hero, so phones can
+  // start the 3D zine right under it. Uses layout offsets, so reveal animations don't move it.
+  function heroButtonBottom() {
+    const btn = $('hero-order'), lead = btn && btn.offsetParent, stage = $('stage');
+    if (!btn || !lead || !visible) return 0;
+    return stage.offsetTop + lead.offsetTop + btn.offsetTop + btn.offsetHeight;
+  }
+
+  return { show, hide, tick, scroll, heroButtonBottom, get zine() { return current; } };
 }
