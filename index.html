@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=28",
-        "./detail.js": "./detail.js?v=28",
-        "./covers.js": "./covers.js?v=28",
-        "./zine-mesh.js": "./zine-mesh.js?v=28",
-        "./wheel-steps.js": "./wheel-steps.js?v=28",
-        "./trail.js": "./trail.js?v=28",
-        "./gallery.js": "./gallery.js?v=28"
+        "./hero.js": "./hero.js?v=29",
+        "./detail.js": "./detail.js?v=29",
+        "./covers.js": "./covers.js?v=29",
+        "./zine-mesh.js": "./zine-mesh.js?v=29",
+        "./wheel-steps.js": "./wheel-steps.js?v=29",
+        "./trail.js": "./trail.js?v=29",
+        "./gallery.js": "./gallery.js?v=29"
       }
     }
   </script>
@@ -473,6 +473,8 @@
     .site-footer__links a { text-decoration: none; }
     .site-footer__links a:hover, .site-footer__contact a:hover { color: var(--pink); }
     .site-footer__contact a { text-decoration: none; }
+    .site-footer__credits { margin-top: 10px; font-size: 12px; opacity: .75; }
+    .site-footer__credits a { text-decoration: underline; text-underline-offset: 2px; }
     .site-footer__contact { text-align: right; }
     /* the Junki logo, printed pink: the PNG is used as a mask so it takes any ink */
     .site-footer__logo {
@@ -618,6 +620,7 @@
           <p class="label">Contact</p>
           <p><a href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></p>
           <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram @junkimag ↗</a></p>
+          <p class="site-footer__credits">Icons: <a href="https://www.streamlinehq.com/icons/pixel" target="_blank" rel="noopener">Pixel by Streamline</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</p>
         </div>
       </div>
       <div class="site-footer__logo" role="img" aria-label="Junki Magazine"></div>
@@ -627,9 +630,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=28"></script>
+  <script src="zines.js?v=29"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=28"></script>
+  <script src="order.js?v=29"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -638,6 +641,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=28"></script>
+  <script type="module" src="hero.js?v=29"></script>
 </body>
 </html>
