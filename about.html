@@ -109,6 +109,10 @@
     @media (max-width: 600px) {
       .nav { gap: 14px; top: 10px; }
     }
+    /* Pixel icons (Streamline, CC BY 4.0): drawn in the current text colour */
+    .px { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; background: currentColor;
+          -webkit-mask: var(--px) center / contain no-repeat; mask: var(--px) center / contain no-repeat; flex: none; }
+    .label .px { margin-right: 8px; width: 16px; height: 16px; vertical-align: -4px; }
   </style>
 </head>
 <body>
@@ -146,9 +150,9 @@
       <p class="crew__note">Based in Copenhagen, made by a crew of several nationalities.</p>
     </section>
     <div class="rows">
-      <div class="row"><span class="label">Contact</span><a class="value" href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></div>
-      <div class="row"><span class="label">Instagram</span><a class="value" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">@junkimag ↗</a></div>
-      <div class="row"><span class="label">Based in</span><span class="value">Copenhagen, Denmark</span></div>
+      <div class="row"><span class="label"><i class="px" style="--px:url(img/icons/pixel/email-envelope-close.svg)" aria-hidden="true"></i>Contact</span><a class="value" href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></div>
+      <div class="row"><span class="label"><i class="px" style="--px:url(img/icons/pixel/logo-social-media-instagram.svg)" aria-hidden="true"></i>Instagram</span><a class="value" href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">@junkimag ↗</a></div>
+      <div class="row"><span class="label"><i class="px" style="--px:url(img/icons/pixel/map-navigation-pin-location-1.svg)" aria-hidden="true"></i>Based in</span><span class="value">Copenhagen, Denmark</span></div>
     </div>
     <p class="credits">Icons: <a href="https://www.streamlinehq.com/icons/pixel" target="_blank" rel="noopener">Pixel by Streamline</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</p>
   </main>
