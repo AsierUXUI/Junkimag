@@ -138,7 +138,7 @@
 <body>
 
   <header>
-    <a class="back" href="zines.html">← Back</a>
+    <a class="back" href="index.html?view=zines">← Back</a>
     <a class="catalog-logo" href="index.html" aria-label="Junki Magazine, home"><img src="img/junki-logo.png" alt="Junki Magazine"></a>
     <h1>Catalog</h1>
   </header>
@@ -152,8 +152,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="zines.js?v=31"></script>
-  <script src="order.js?v=31"></script>
+  <script src="zines.js?v=34"></script>
+  <script src="order.js?v=34"></script>
   <script>
     // Zines come from zines.js (shared with the home page hero).
     var ZINES = window.JUNKI_ZINES || [];
@@ -164,7 +164,7 @@
       var card = document.createElement('div');
       card.className = 'card';
       card.innerHTML =
-        '<a class="card-cover" href="zines.html?zine=' + zine.slug + '">' +
+        '<a class="card-cover" href="index.html?zine=' + zine.slug + '">' +
           (zine.cover
             ? '<img src="' + zine.cover + '" alt="' + zine.title + '">'
             : '<span class="placeholder-text" data-cover="' + zine.slug + '">Cover coming soon</span>') +
@@ -196,7 +196,7 @@
   <!-- Generated riso covers for zines without a cover image (same as the hero) -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   <script type="module">
-    import { makeCover } from './covers.js?v=31';
+    import { makeCover } from './covers.js?v=34';
     document.querySelectorAll('[data-cover]').forEach(async function (el) {
       var zine = (window.JUNKI_ZINES || []).find(function (z) { return z.slug === el.dataset.cover; });
       if (!zine) return;
