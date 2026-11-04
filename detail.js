@@ -1,5 +1,5 @@
 // Zine detail view: the content below and around the 3D zine when a zine is
-// open (index.html?zine=<slug>). The 3D zine itself is drawn by hero.js.
+// open (zines.html?zine=<slug>). The 3D zine itself is drawn by hero.js.
 
 import { makeCover, COVER_W, COVER_H } from './covers.js';
 import { createGallery, createLightbox } from './gallery.js';
@@ -169,7 +169,7 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     const others = zines.filter(z => z.slug !== zine.slug);
     row.scrollLeft = 0;
     row.innerHTML = others.map(z => `
-      <a class="card" href="index.html?zine=${encodeURIComponent(z.slug)}" style="--ink-a:${esc(z.inks?.[0] || '#FF48B0')}" data-slug="${esc(z.slug)}">
+      <a class="card" href="zines.html?zine=${encodeURIComponent(z.slug)}" style="--ink-a:${esc(z.inks?.[0] || '#FF48B0')}" data-slug="${esc(z.slug)}">
         <span class="card__name"><strong>${esc(z.title)}</strong><span class="label">${esc(window.junkiPrice(z))}</span></span>
         <img class="card__cover" alt="" draggable="false">
         <span class="card__pill">See this issue</span>
