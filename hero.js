@@ -1,7 +1,7 @@
 // Junki home page and zine pages, as one page.
 // Home: a diagonal row of 3D zines. Scroll steps one zine at a time, drag
 // flips a zine to its back cover, printer's crop marks frame the zine in front.
-// Clicking the zine in front opens its detail view (zines.html?zine=<slug>):
+// Clicking the zine in front opens its detail view (index.html?zine=<slug>):
 // the same 3D zine moves out of the row into the detail hero, so there is no
 // page load in between. The detail content lives in detail.js.
 
@@ -13,6 +13,7 @@ import { createZineKit } from './zine-mesh.js';
 import { createWheelStepper } from './wheel-steps.js';
 import { createDetailView } from './detail.js';
 import { createTrail } from './trail.js';
+import { createLanding } from './landing.js';
 
 // Every tunable value lives here. Add ?debug to the URL for a live panel.
 const CONFIG = {
@@ -84,6 +85,15 @@ const preloader = $('preloader'), preloaderCount = $('preloader-count');
 
 const detailUrl = z => '?zine=' + encodeURIComponent(z.slug);
 const slugFromUrl = () => new URLSearchParams(location.search).get('zine');
+// The whole site is one page with four views: Home (the landing), Zines (the carousel),
+// a zine's page, and About. The address says which: /, ?view=zines, ?zine=<slug>, ?view=about.
+const viewFromUrl = () => {
+  const q = new URLSearchParams(location.search);
+  if (q.get('zine')) return 'detail';
+  const v = q.get('view');
+  return v === 'zines' || v === 'about' ? v : 'landing';
+};
+const viewUrl = v => (v === 'landing' ? location.pathname : '?view=' + v);
 const indexOfSlug = slug => ZINES.findIndex(z => z.slug === slug);
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
@@ -238,7 +248,7 @@ function init() {
     trail.setInks(ZINES[mode === 'detail' ? detailIndex : target]?.inks);
 
     // the row steps back while a zine is open, and comes back after
-    const awayTarget = mode === 'detail' ? 1 : 0;
+    const awayTarget = mode === 'home' ? 0 : 1;
     const prevAway = away;
     // opening: the rest of the row clears out quickly; closing: it comes back at the normal pace
     away = reduce ? awayTarget : away + (awayTarget - away) * damp(awayTarget ? CONFIG.othersOpenRate : CONFIG.othersRate, dt);
@@ -268,7 +278,7 @@ function init() {
       const d = it.i - x, ad = Math.abs(d);
       const inRange = ad <= CONFIG.renderRadius + 0.5 || !!it.override;
       it.group.visible = inRange && (introStart >= 0 || reduce);
-      if (inRange && it.i !== detailIndex && !it.override && (mode === 'detail' ? away > CONFIG.othersHideAt : away > 0.97)) it.group.visible = false;
+      if (inRange && it.i !== detailIndex && !it.override && (mode !== 'home' ? away > CONFIG.othersHideAt : away > 0.97)) it.group.visible = false;
       if (!inRange) continue;
       if (!it.loaded) loadTextures(it);
 
@@ -757,6 +767,7 @@ function init() {
     it.override = { kind: 'detail', from, start: clock, dur: reduce ? 0 : CONFIG.openDuration };
     if (push) history.pushState({ zine: ZINES[index].slug }, '', detailUrl(ZINES[index]));
     detail.show(ZINES[index]);
+    updateNav();
     marksDirty = true; dirty = true;
   }
 
@@ -768,8 +779,9 @@ function init() {
     mode = 'home';
     it.override = { kind: 'return', from, start: clock, dur: reduce ? 0 : CONFIG.closeDuration };
     detailIndex = -1;
-    if (push) history.pushState({}, '', location.pathname);
-    document.title = 'Junki Magazine';
+    if (push) history.pushState({}, '', viewUrl('zines'));
+    document.title = 'Zines — Junki Magazine';
+    updateNav();
     hero.focus({ preventScroll: true });
     dirty = true;
   }
@@ -802,12 +814,96 @@ function init() {
     dirty = true;
   });
 
+  // ── Views: Home (landing) / Zines (carousel) / a zine / About ────────
+  const html = document.documentElement;
+  const landing = createLanding({ root: $('landing') });
+  const TITLES = { landing: 'Junki Magazine', home: 'Zines — Junki Magazine', about: 'About — Junki Magazine' };
+  const viewOf = m => (m === 'home' || m === 'detail' ? 'zines' : m);
+
+  function updateNav() {
+    const v = viewOf(mode);
+    document.querySelectorAll('.nav [data-view]').forEach(a => {
+      const on = a.dataset.view === v && a.classList.contains('nav__link');
+      a.classList.toggle('is-active', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+  }
+
+  // leave Home or About (they scroll like a page; the carousel doesn't)
+  function leavePage() {
+    if (mode !== 'landing' && mode !== 'about') return;
+    html.classList.remove('is-landing', 'is-about');
+    landing.hide();
+    detail.pageScroll(false);
+  }
+
+  // drop out of a zine's page without the glide back into the row
+  function dropDetail() {
+    if (mode !== 'detail') return;
+    const it = items[detailIndex];
+    detail.hide();
+    if (it) { it.override = null; it.inner.matrixAutoUpdate = true; }
+    detailIndex = -1;
+  }
+
+  // the carousel shows for the first time: zines fan in once their covers are ready
+  async function enterCarousel() {
+    if (introStart >= 0) return;
+    await ready;
+    if (mode !== 'home' || introStart >= 0) return;
+    html.removeAttribute('data-preload');
+    introStart = clock; target = startIndex; x = startIndex;
+    startMarks(startIndex);
+    setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
+  }
+
+  function go(view, { push = true } = {}) {
+    if (view === 'zines') {
+      if (mode === 'home') return;
+      if (mode === 'detail') { closeDetail({ push }); return; }
+      leavePage();
+      mode = 'home';
+      if (push) history.pushState({}, '', viewUrl('zines'));
+      enterCarousel();
+      hero.focus({ preventScroll: true });
+    } else {
+      if (mode === view) return;
+      dropDetail();
+      leavePage();
+      mode = view;
+      html.classList.add(view === 'landing' ? 'is-landing' : 'is-about');
+      detail.pageScroll(true);
+      if (view === 'landing') landing.show();
+      setPill(null);
+      if (push) history.pushState({}, '', viewUrl(view));
+    }
+    document.title = TITLES[mode] || TITLES.landing;
+    updateNav();
+    marksDirty = true; dirty = true;
+  }
+
+  // header / footer / landing links that switch views (no page load)
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-view]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+    e.preventDefault();
+    go(a.dataset.view);
+  });
+
   // browser back / forward
   addEventListener('popstate', () => {
+    const view = viewFromUrl();
+    if (view !== 'detail') {
+      if (view === 'zines' && mode === 'detail') closeDetail({ push: false });
+      else go(view, { push: false });
+      return;
+    }
     const i = indexOfSlug(slugFromUrl());
-    if (i < 0) closeDetail({ push: false });
-    else if (mode !== 'detail') openDetail(i, { push: false });
-    else if (i !== detailIndex) {
+    if (i < 0) return;
+    if (mode !== 'detail') {
+      if (mode !== 'home') { leavePage(); mode = 'home'; }
+      openDetail(i, { push: false });
+    } else if (i !== detailIndex) {
       // same as switchDetail, without adding a history entry
       const old = items[detailIndex];
       old.override = { kind: 'exit', from: currentWorld(old), start: clock, dur: reduce ? 0 : 0.7 };
@@ -835,9 +931,13 @@ function init() {
   // screen, the zines just fan in again once their covers are ready.
   let quick = false;
   try { quick = sessionStorage.getItem('junki-visited') === '1'; sessionStorage.setItem('junki-visited', '1'); } catch (e) {}
-  if (quick) preloader.classList.add('is-done');
+  const initialView = viewFromUrl();
+  const pageFirst = initialView === 'landing' || initialView === 'about';
+  if (quick || pageFirst) preloader.classList.add('is-done');
+  if (pageFirst) { html.removeAttribute('data-preload'); go(initialView, { push: false }); }
+  else { updateNav(); if (initialView === 'zines') document.title = TITLES.home; }
 
-  (async () => {
+  const ready = (async () => {
     try {
       await waitForFonts();
       const first = items.filter(it => Math.abs(it.i - startIndex) <= CONFIG.renderRadius);
@@ -857,8 +957,9 @@ function init() {
     } catch (err) {
       console.error(err);   // never leave the visitor on the loading screen
     }
-    runIntro();
   })();
+  // opened on Zines or a zine: the loading screen and the fan-in as before
+  if (!pageFirst) ready.then(runIntro);
 
   function runIntro() {
     const reveal = () => {
