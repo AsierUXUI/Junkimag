@@ -19,13 +19,13 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=28",
-        "./detail.js": "./detail.js?v=28",
-        "./covers.js": "./covers.js?v=28",
-        "./zine-mesh.js": "./zine-mesh.js?v=28",
-        "./wheel-steps.js": "./wheel-steps.js?v=28",
-        "./trail.js": "./trail.js?v=28",
-        "./gallery.js": "./gallery.js?v=28"
+        "./hero.js": "./hero.js?v=30",
+        "./detail.js": "./detail.js?v=30",
+        "./covers.js": "./covers.js?v=30",
+        "./zine-mesh.js": "./zine-mesh.js?v=30",
+        "./wheel-steps.js": "./wheel-steps.js?v=30",
+        "./trail.js": "./trail.js?v=30",
+        "./gallery.js": "./gallery.js?v=30"
       }
     }
   </script>
@@ -195,7 +195,7 @@
       font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
       color: var(--paper); background: var(--ink); border: 1px solid var(--ink); border-radius: 500px; padding: 15px 18px;
     }
-    .see-more::before { content: ''; width: 7px; height: 7px; background: var(--pink); transform: rotate(45deg); }
+    .see-more::before { content: ''; width: 18px; height: 18px; background: var(--pink); -webkit-mask: url(img/icons/pixel/interface-essential-view-eye.svg) center / contain no-repeat; mask: url(img/icons/pixel/interface-essential-view-eye.svg) center / contain no-repeat; }
     .social {
       position: absolute; left: 14px; bottom: 14px; text-decoration: none;
       font-family: var(--label); font-size: var(--fs-label); letter-spacing: .2em; text-transform: uppercase;
@@ -229,6 +229,9 @@
     }
     .cursor-pill__inner::before {
       content: ''; width: 6px; height: 6px; background: var(--pink); transform: rotate(45deg); flex: none;
+    }
+    .cursor-pill.is-peep .cursor-pill__inner::before {
+      width: 16px; height: 16px; transform: none; -webkit-mask: url(img/icons/pixel/interface-essential-view-eye.svg) center / contain no-repeat; mask: url(img/icons/pixel/interface-essential-view-eye.svg) center / contain no-repeat;
     }
     .cursor-pill.is-visible .cursor-pill__inner { transform: translate(18px, -16px) scale(1); opacity: 1; }
     @media (hover: none) { .cursor-pill { display: none; } }
@@ -310,8 +313,8 @@
       font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
       animation: back-in .6s var(--ease-out) .3s both;
     }
-    .zhero__back svg { transition: transform .3s var(--ease-io); }
-    .zhero__back:hover svg, .zhero__back:focus-visible svg { transform: translateX(-4px); }
+    .zhero__back .zhero__back-icon { width: 22px; height: 22px; vertical-align: 0; transition: transform .3s var(--ease-io); }
+    .zhero__back:hover .zhero__back-icon, .zhero__back:focus-visible .zhero__back-icon { transform: translateX(-4px); }
     @keyframes back-in { from { opacity: 0; transform: translateX(8px); } }
     /* description + order button under the title; they sit in front of the zine as it rises */
     .zhero__lead {
@@ -473,6 +476,8 @@
     .site-footer__links a { text-decoration: none; }
     .site-footer__links a:hover, .site-footer__contact a:hover { color: var(--pink); }
     .site-footer__contact a { text-decoration: none; }
+    .site-footer__credits { margin-top: 10px; font-size: 12px; opacity: .75; }
+    .site-footer__credits a { text-decoration: underline; text-underline-offset: 2px; }
     .site-footer__contact { text-align: right; }
     /* the Junki logo, printed pink: the PNG is used as a mask so it takes any ink */
     .site-footer__logo {
@@ -511,6 +516,9 @@
     @media (prefers-reduced-motion: reduce) {
       .line, .rule, .swap.is-out .line, .swap.is-out .rule { transition: none !important; }
     }
+    /* Pixel icons (Streamline, CC BY 4.0): drawn in the current text colour */
+    .px { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; background: currentColor;
+          -webkit-mask: var(--px) center / contain no-repeat; mask: var(--px) center / contain no-repeat; flex: none; }
   </style>
 </head>
 <body>
@@ -578,7 +586,7 @@
           <button class="btn zhero__cta" type="button" id="hero-order" data-reveal-self>Order a copy</button>
         </div>
         <a class="zhero__back" href="index.html" data-home aria-label="Back to all zines">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+          <i class="px zhero__back-icon" style="--px:url(img/icons/pixel/interface-essential-navigation-left-circle-2.svg)" aria-hidden="true"></i>
           <span>Back</span>
         </a>
         <button class="scroll-hint" type="button" id="scroll-hint">
@@ -616,20 +624,21 @@
         </nav>
         <div class="site-footer__contact">
           <p class="label">Contact</p>
-          <p><a href="mailto:junkimagazine@comic.com">junkimagazine@comic.com</a></p>
-          <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener">Instagram @junkimag ↗</a></p>
+          <p><a href="mailto:junkimagazine@comic.com"><i class="px" style="--px:url(img/icons/pixel/email-envelope-close.svg)" aria-hidden="true"></i> junkimagazine@comic.com</a></p>
+          <p><a href="https://www.instagram.com/junkimag/" target="_blank" rel="noopener"><i class="px" style="--px:url(img/icons/pixel/logo-social-media-instagram.svg)" aria-hidden="true"></i> Instagram @junkimag ↗</a></p>
+          <p class="site-footer__credits">Icons: <a href="https://www.streamlinehq.com/icons/pixel" target="_blank" rel="noopener">Pixel by Streamline</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</p>
         </div>
       </div>
       <div class="site-footer__logo" role="img" aria-label="Junki Magazine"></div>
     </footer>
   </div>
 
-  <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">See this issue</div></div>
+  <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=28"></script>
+  <script src="zines.js?v=30"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=28"></script>
+  <script src="order.js?v=30"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -638,6 +647,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=28"></script>
+  <script type="module" src="hero.js?v=30"></script>
 </body>
 </html>

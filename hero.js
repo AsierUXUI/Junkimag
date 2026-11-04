@@ -655,11 +655,11 @@ function init() {
     setPill(hovered);
     dirty = true;
   }
-  function setPill(h) { showPill(h ? (h.item.i === target ? 'See this issue' : 'Bring to front') : null); }
+  function setPill(h) { showPill(h ? (h.item.i === target ? 'Peep this' : 'Bring to front') : null); }
   function showPill(text) {
     if (coarse) return;
     pill.classList.toggle('is-visible', !!text);
-    if (text) pillText.textContent = text;
+    if (text) { pillText.textContent = text; pill.classList.toggle('is-peep', text === 'Peep this'); }
   }
   addEventListener('pointermove', e => {
     pointer.x = e.clientX; pointer.y = e.clientY;
