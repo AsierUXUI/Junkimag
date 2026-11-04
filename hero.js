@@ -1,7 +1,7 @@
 // Junki home page and zine pages, as one page.
 // Home: a diagonal row of 3D zines. Scroll steps one zine at a time, drag
 // flips a zine to its back cover, printer's crop marks frame the zine in front.
-// Clicking the zine in front opens its detail view (index.html?zine=<slug>):
+// Clicking the zine in front opens its detail view (zines.html?zine=<slug>):
 // the same 3D zine moves out of the row into the detail hero, so there is no
 // page load in between. The detail content lives in detail.js.
 
