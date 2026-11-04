@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel icons — Junki</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Internal page for picking icons (not linked from the site). -->
+  <style>
+    :root { --paper: #F2F0EB; --ink: #111; --pink: #FF48B0; --blue: #0078BF; --lime: #A6E81F; --tint: var(--ink); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--paper); color: var(--ink); font: 500 15px/1.4 Inter, system-ui, sans-serif; padding: 24px 16px 60px; }
+    header { max-width: 1100px; margin: 0 auto 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+    h1 { font: 700 13px 'Space Mono', monospace; letter-spacing: .2em; text-transform: uppercase; flex: 1 1 100%; }
+    input { font: inherit; padding: 9px 12px; border: 1px solid var(--ink); background: #fff; min-width: 240px; flex: 1; }
+    .inks { display: flex; gap: 6px; }
+    .inks button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--ink); cursor: pointer; }
+    .credit { font-size: 12px; color: rgba(17,17,17,.6); flex: 1 1 100%; }
+    .grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+    .ic { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px 10px; border: 1px solid rgba(17,17,17,.12);
+          background: none; font: inherit; cursor: pointer; color: var(--ink); }
+    .ic:hover, .ic:focus-visible { border-color: var(--ink); background: #fff; }
+    .ic[hidden] { display: none; }
+    .ic i { width: 32px; height: 32px; background: var(--tint); -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; image-rendering: pixelated; }
+    .ic span { font: 10px/1.2 'Space Mono', monospace; text-align: center; word-break: break-all; color: rgba(17,17,17,.7); }
+    .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--paper);
+             padding: 10px 16px; border-radius: 500px; font: 12px 'Space Mono', monospace; opacity: 0; transition: opacity .2s; }
+    .toast.on { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pixel icons · <span id="count"></span></h1>
+    <input id="q" type="search" placeholder="Search (arrow, eye, cart…)" autocomplete="off">
+    <div class="inks" aria-label="Preview colour">
+      <button style="background:#111" data-c="#111" aria-label="Ink"></button>
+      <button style="background:#FF48B0" data-c="#FF48B0" aria-label="Pink"></button>
+      <button style="background:#0078BF" data-c="#0078BF" aria-label="Blue"></button>
+      <button style="background:#A6E81F" data-c="#A6E81F" aria-label="Lime"></button>
+    </div>
+    <p class="credit">Pixel free icons by Streamline, CC BY 4.0. Click an icon to copy its file path.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="toast" id="toast"></div>
+  <script>
+    const grid = document.getElementById('grid'), q = document.getElementById('q'), toast = document.getElementById('toast');
+    let names = [];
+    fetch('img/icons/pixel/index.json').then(r => r.json()).then(list => {
+      names = list; document.getElementById('count').textContent = list.length;
+      grid.innerHTML = list.map(n => `<button class="ic" data-n="${n}" title="${n}"><i style="--src:url(img/icons/pixel/${n}.svg)"></i><span>${n}</span></button>`).join('');
+    });
+    q.addEventListener('input', () => {
+      const v = q.value.trim().toLowerCase();
+      grid.querySelectorAll('.ic').forEach(el => { el.hidden = v && !el.dataset.n.includes(v); });
+    });
+    document.querySelector('.inks').addEventListener('click', e => {
+      const b = e.target.closest('button[data-c]'); if (b) document.documentElement.style.setProperty('--tint', b.dataset.c);
+    });
+    grid.addEventListener('click', e => {
+      const b = e.target.closest('.ic'); if (!b) return;
+      const path = `img/icons/pixel/${b.dataset.n}.svg`;
+      navigator.clipboard?.writeText(path).catch(() => {});
+      toast.textContent = path; toast.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toast.classList.remove('on'), 1600);
+    });
+  </script>
+</body>
+</html>
