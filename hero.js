@@ -48,6 +48,8 @@ const CONFIG = {
   // intro
   preloadSpin: 1.1, preloadRiseFrom: 3, preloadRiseDepth: 0.7, preloadFanDuration: 1.15, preloadStagger: 0.07,
   // opening a zine: the others drop back out of view, the chosen one moves into the detail hero
+  // Home ↔ Zines: the row slides in from / out to the right (gallery units)
+  slideDistance: 11, slideInTime: 1.15, slideOutTime: 0.75, slideStagger: 0.06,
   openDuration: 1.1, closeDuration: 0.9, othersRecede: 4, othersDrop: 2.5, othersRate: 4, othersOpenRate: 11, othersHideAt: 0.45,
   // detail hero choreography (scroll-driven)
   detailScrollRange: 0.45, detailRise: 0.24, detailTilt: 20,
@@ -73,6 +75,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 const easeExpoOut = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
 const easeCubicOut = t => 1 - Math.pow(1 - t, 3);
+const easeCubicIn = t => t * t * t;
 const easeCubicInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const easePow2Out = t => 1 - (1 - t) * (1 - t);
 
@@ -189,7 +192,8 @@ function init() {
   let x = startIndex, v = 0, target = startIndex;   // spring on the float index
   let dirty = true, lastT = performance.now(), clock = 0;
   let introStart = -1, introDone = reduce;
-  let mode = 'home', detailIndex = -1, away = 0;      // away: 0 = row in view, 1 = row gone (detail view)
+  let mode = 'home', detailIndex = -1, away = 0;
+  let slide = null;   // { dir: 1 in from the right | -1 out to the right, start }      // away: 0 = row in view, 1 = row gone (detail view)
   const detailTilt = { x: 0, y: 0 };
   let hovered = null, pointer = { x: -1e4, y: -1e4, nx: 0, ny: 0, ndc: new THREE.Vector2(), inside: false };
   let layout = { rotX: CONFIG.galleryRotX, rotY: CONFIG.galleryRotY, scale: CONFIG.galleryScale, gap: CONFIG.hGap, narrow: false };
@@ -248,7 +252,15 @@ function init() {
     trail.setInks(ZINES[mode === 'detail' ? detailIndex : target]?.inks);
 
     // the row steps back while a zine is open, and comes back after
-    const awayTarget = mode === 'home' ? 0 : 1;
+    let awayTarget = mode === 'home' ? 0 : 1;
+    if (slide) {
+      const total = (slide.dir > 0 ? CONFIG.slideInTime : CONFIG.slideOutTime) + CONFIG.slideStagger * 6;
+      if (clock - slide.start > total) {
+        if (slide.dir > 0) startMarks(target, true);
+        else { away = 1; html.classList.remove('is-morphing'); }
+        slide = null;
+      } else if (slide.dir < 0) { awayTarget = 0; away = 0; }   // stay in view while sliding out
+    }
     const prevAway = away;
     // opening: the rest of the row clears out quickly; closing: it comes back at the normal pace
     away = reduce ? awayTarget : away + (awayTarget - away) * damp(awayTarget ? CONFIG.othersOpenRate : CONFIG.othersRate, dt);
@@ -353,6 +365,20 @@ function init() {
         const a = easeCubicInOut(clamp(away * (1.25 - rank * 0.06), 0, 1));
         iz -= CONFIG.othersRecede * a;
         iy -= CONFIG.othersDrop * a * (0.6 + rank * 0.1);
+      }
+
+      // Home ↔ Zines: slide in from / out to the right, one after another
+      if (slide) {
+        const rank = Math.min(Math.abs(it.i - x), 6);
+        const ts = clock - slide.start - rank * CONFIG.slideStagger;
+        if (slide.dir > 0) {
+          const e = easeExpoOut(clamp(ts / CONFIG.slideInTime, 0, 1));
+          ix += (1 - e) * CONFIG.slideDistance; extraSpin += (1 - e) * 0.9;
+        } else {
+          const e = easeCubicIn(clamp(ts / CONFIG.slideOutTime, 0, 1));
+          ix += e * CONFIG.slideDistance; extraSpin -= e * 0.6;
+        }
+        motion += 1;
       }
 
       it.group.position.set(ix, iy, iz);
@@ -830,10 +856,10 @@ function init() {
   }
 
   // leave Home or About (they scroll like a page; the carousel doesn't)
-  function leavePage() {
+  function leavePage({ keepLanding = false } = {}) {
     if (mode !== 'landing' && mode !== 'about') return;
     html.classList.remove('is-landing', 'is-about');
-    landing.hide();
+    if (!keepLanding) landing.hide();
     detail.pageScroll(false);
   }
 
@@ -847,33 +873,42 @@ function init() {
   }
 
   // the carousel shows for the first time: zines fan in once their covers are ready
-  async function enterCarousel() {
-    if (introStart >= 0) return;
-    await ready;
-    if (mode !== 'home' || introStart >= 0) return;
-    html.removeAttribute('data-preload');
-    introStart = clock; target = startIndex; x = startIndex;
-    startMarks(startIndex);
-    setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
+  async function enterCarousel({ slideIn = false } = {}) {
+    if (introStart < 0) {
+      await ready;
+      if (mode !== 'home' || introStart >= 0) return;
+      html.removeAttribute('data-preload');
+      introStart = clock; target = startIndex; x = startIndex;
+      if (slideIn) introDone = true;   // they slide in from the right instead of fanning out
+      else startMarks(startIndex);
+      setTimeout(() => hero.classList.add('is-ready'), reduce ? 0 : 1400);
+    }
+    if (slideIn && !reduce) { away = 0; slide = { dir: 1, start: clock }; marksDirty = true; }
   }
 
   function go(view, { push = true } = {}) {
     if (view === 'zines') {
       if (mode === 'home') return;
       if (mode === 'detail') { closeDetail({ push }); return; }
-      leavePage();
+      const fromHome = mode === 'landing';
+      // Home → Zines: the drawing shrinks into the lime hill while the zines slide in
+      if (fromHome) landing.leaveIntoHill();
+      leavePage({ keepLanding: fromHome });
       mode = 'home';
       if (push) history.pushState({}, '', viewUrl('zines'));
-      enterCarousel();
+      enterCarousel({ slideIn: fromHome });
       hero.focus({ preventScroll: true });
     } else {
       if (mode === view) return;
+      // Zines → Home: the zines slide out to the right while the hill grows back into the drawing
+      const hillToHome = view === 'landing' && mode === 'home' && introStart >= 0 && !reduce;
       dropDetail();
       leavePage();
+      if (hillToHome) { html.classList.add('is-morphing'); slide = { dir: -1, start: clock }; setPill(null); }
       mode = view;
       html.classList.add(view === 'landing' ? 'is-landing' : 'is-about');
       detail.pageScroll(true);
-      if (view === 'landing') landing.show();
+      if (view === 'landing') landing.show({ fromHill: hillToHome });
       setPill(null);
       if (push) history.pushState({}, '', viewUrl(view));
     }

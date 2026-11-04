@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=32",
-        "./detail.js": "./detail.js?v=32",
-        "./covers.js": "./covers.js?v=32",
-        "./zine-mesh.js": "./zine-mesh.js?v=32",
-        "./wheel-steps.js": "./wheel-steps.js?v=32",
-        "./trail.js": "./trail.js?v=32",
-        "./gallery.js": "./gallery.js?v=32",
-        "./landing.js": "./landing.js?v=32"
+        "./hero.js": "./hero.js?v=33",
+        "./detail.js": "./detail.js?v=33",
+        "./covers.js": "./covers.js?v=33",
+        "./zine-mesh.js": "./zine-mesh.js?v=33",
+        "./wheel-steps.js": "./wheel-steps.js?v=33",
+        "./trail.js": "./trail.js?v=33",
+        "./gallery.js": "./gallery.js?v=33",
+        "./landing.js": "./landing.js?v=33"
       }
     }
   </script>
@@ -522,11 +522,19 @@
 
     /* ════════ Home view: the landing ("Third Eye", landing.js) ════════ */
     #landing {
-      position: fixed; inset: 0; z-index: 25; background: var(--paper);
+      position: fixed; inset: 0; z-index: 25;
       opacity: 0; visibility: hidden; pointer-events: none;
       transition: opacity .6s var(--ease-io), visibility 0s .6s;
     }
     #landing.is-on { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+    /* morphing into / out of the carousel's hill: the landing slips under the 3D zines
+       so they can slide in over it, and its words step aside */
+    #landing.is-morph { z-index: 1; pointer-events: none; transition: none; }
+    #landing.is-morph .mark, #landing.is-morph .tagline, #landing.is-morph .hint, #landing.is-morph .enter {
+      opacity: 0 !important; transition: opacity .35s var(--ease-io);
+    }
+    #landing.is-snap, #landing.is-snap * { transition: none !important; }
+    .is-morphing .stage-gl { opacity: 1 !important; transition: none; }
     #landing-track { display: none; height: 260vh; height: 260svh; }
     .is-landing #landing-track { display: block; }
     .is-landing .nav__logo { opacity: 0; pointer-events: none; }   /* the big logo is the landing */
@@ -815,9 +823,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=32"></script>
+  <script src="zines.js?v=33"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=32"></script>
+  <script src="order.js?v=33"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -826,6 +834,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=32"></script>
+  <script type="module" src="hero.js?v=33"></script>
 </body>
 </html>

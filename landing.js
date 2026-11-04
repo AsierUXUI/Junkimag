@@ -9,8 +9,8 @@ export function createLanding({ root }) {
   const canvas = root.querySelector('#eye');
   const inks = root.querySelectorAll('.mark__ink');
   const track = document.getElementById('landing-track');
-  let active = false, progress = 0, boilTimer = 0, rafId = 0;
-  const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+  let active = false, progress = 0, boilTimer = 0, rafId = 0, morph = 0, morphAnim = null;
+  const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: true, alpha: true });
   if (!gl) root.classList.add('no-gl');
 
   // ── Logo boil: two inks jittering at 10 fps ─────────────────────────
@@ -26,7 +26,7 @@ export function createLanding({ root }) {
 
   // ── Scroll: dive into the eye (over the landing track) ──────────────
   function onScroll() {
-    if (!active) return;
+    if (!active || morph > 0) return;   // frozen while morphing into / out of the hill
     const max = Math.max(1, track.offsetHeight - innerHeight);
     progress = Math.min(1, Math.max(0, scrollY / max));
     root.style.setProperty('--p', progress.toFixed(3));
@@ -50,6 +50,11 @@ export function createLanding({ root }) {
     uniform vec2 uRes;      // drawing buffer px
     uniform float uTime, uTile, uR, uZoom, uDpr;
     uniform vec2 uLens;     // lens centre, in "p" units (height = 1, origin centre)
+    // morph into the carousel's lime hill (0 = landing, 1 = exactly the hill)
+    uniform float uMorph;
+    uniform vec4 uHill;     // the hill's SVG box in device px from the top-left: x, y, w, h
+    uniform float uFill;    // 1 on phones: the hill continues as a solid block below
+    uniform vec2 uPoly[32]; // the hill outline, in SVG units (1030 × 440)
     out vec4 o;
     const vec3 PAPER = vec3(0.949, 0.941, 0.922);
     const vec3 INK   = vec3(0.067);
@@ -63,6 +68,19 @@ export function createLanding({ root }) {
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
     }
     float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; } return v; }
+
+    // signed distance to the hill outline (negative inside), in SVG units
+    float sdPoly(vec2 p) {
+      float d = dot(p - uPoly[0], p - uPoly[0]), s = 1.0;
+      for (int i = 0, j = 31; i < 32; j = i, i++) {
+        vec2 e = uPoly[j] - uPoly[i], w = p - uPoly[i];
+        vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+        d = min(d, dot(b, b));
+        bvec3 c = bvec3(p.y >= uPoly[i].y, p.y < uPoly[j].y, e.x * w.y > e.y * w.x);
+        if (all(c) || all(not(c))) s *= -1.0;
+      }
+      return s * sqrt(d);
+    }
 
     // ink coverage of the drawing at point p (in "p" units), tiled
     float ink(vec2 p) { return texture(uTex, p * uTile + 0.5).a; }
@@ -110,9 +128,31 @@ export function createLanding({ root }) {
       float ring = 1.0 - smoothstep(0.0012, 0.0032, abs(d - rr));
       col = mix(col, INK, ring * 0.9 * (1.0 - smoothstep(0.6, 1.0, r)));
 
+      float alpha = 1.0;
+      if (uMorph > 0.0) {
+        // where this pixel sits in the hill's SVG
+        vec2 css = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+        vec2 sv = (css - uHill.xy) / uHill.zw * vec2(1030.0, 440.0);
+        float inHill = 1.0 - smoothstep(-1.0, 1.0, sdPoly(sv) * uHill.z / 1030.0);
+        if (uFill > 0.5 && sv.y > 400.0 && sv.x >= 0.0 && sv.x <= 1030.0) inHill = 1.0;
+        float e = smoothstep(0.0, 1.0, uMorph);
+        // the drawing slides and shrinks from the landing's mapping to the hill's own
+        vec2 uvL = q * uTile + 0.5;
+        vec2 uvH = vec2(sv.x / 1030.0, (sv.y + 90.0) / 1030.0);
+        float aH = texture(uTex, mix(uvL, uvH, e)).a;
+        float g = clamp(((sv.x / 1030.0) * 0.35 + (sv.y - 22.0) / 418.0) / 1.1225, 0.0, 1.0);
+        vec3 lime = sv.y > 440.0 ? vec3(0.557, 0.878, 0.0) : mix(vec3(0.894, 1.0, 0.361), vec3(0.557, 0.878, 0.0), g);
+        vec3 hillCol = mix(lime, INK, aH * mix(0.78, 0.13, e));
+        vec3 inCol = mix(col, hillCol, smoothstep(0.0, 0.6, uMorph));
+        vec3 outCol = mix(col, PAPER, e);
+        col = mix(outCol, inCol, inHill);
+        // at the end, everything outside the hill turns see-through so the zines show
+        alpha = mix(1.0, inHill, smoothstep(0.5, 1.0, uMorph));
+      }
+
       // paper grain
       col *= 0.96 + 0.04 * hash(gl_FragCoord.xy + floor(t * 12.0));
-      o = vec4(col, 1.0);
+      o = vec4(col * alpha, alpha);
     }`;
 
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
@@ -124,7 +164,18 @@ export function createLanding({ root }) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const U = n => gl.getUniformLocation(prog, n);
-    const u = { tex: U('uTex'), res: U('uRes'), time: U('uTime'), tile: U('uTile'), r: U('uR'), zoom: U('uZoom'), lens: U('uLens'), dpr: U('uDpr') };
+    const u = { tex: U('uTex'), res: U('uRes'), time: U('uTime'), tile: U('uTile'), r: U('uR'), zoom: U('uZoom'), lens: U('uLens'), dpr: U('uDpr'),
+      morph: U('uMorph'), hill: U('uHill'), fill: U('uFill'), poly: U('uPoly') };
+
+    // the carousel's hill: its outline (sampled once from the SVG path) and where it sits now
+    const shapeSvg = document.getElementById('shape');
+    const shapePath = shapeSvg && shapeSvg.querySelector('path[fill]');
+    const shapeFill = document.querySelector('.shape-layer__fill');
+    const poly = new Float32Array(64);
+    if (shapePath) {
+      const len = shapePath.getTotalLength();
+      for (let i = 0; i < 32; i++) { const pt = shapePath.getPointAtLength(len * i / 32); poly[i * 2] = pt.x; poly[i * 2 + 1] = pt.y; }
+    }
 
     // the drawing as a repeating texture
     const tex = gl.createTexture();
@@ -164,8 +215,14 @@ export function createLanding({ root }) {
       if (now - lastMove > 2500 && !reduce) target = [Math.sin(t * 0.23) * 0.32 * aspect, Math.sin(t * 0.37) * 0.22 - 0.05];
       const k = reduce ? 1 : 0.08;
       lens[0] += (target[0] - lens[0]) * k; lens[1] += (target[1] - lens[1]) * k;
-      const ease = progress * progress;
-      const baseR = aspect < 0.8 ? 0.2 : 0.17;
+      // morph animation toward / away from the hill
+      if (morphAnim) {
+        const k2 = Math.min(1, (now - morphAnim.start) / (morphAnim.dur * 1000));
+        morph = morphAnim.from + (morphAnim.to - morphAnim.from) * (k2 < 0.5 ? 4 * k2 * k2 * k2 : 1 - Math.pow(-2 * k2 + 2, 3) / 2);
+        if (k2 >= 1) { const done = morphAnim.done; morphAnim = null; done && done(); }
+      }
+      const ease = progress * progress * (1 - morph);
+      const baseR = (aspect < 0.8 ? 0.2 : 0.17) * (1 - morph);
       gl.uniform1i(u.tex, 0);
       gl.uniform2f(u.res, canvas.width, canvas.height);
       gl.uniform1f(u.time, reduce ? 0 : t);
@@ -174,24 +231,53 @@ export function createLanding({ root }) {
       gl.uniform1f(u.zoom, 1 + ease * 3);
       gl.uniform2f(u.lens, lens[0] * (1 - ease), lens[1] * (1 - ease));
       gl.uniform1f(u.dpr, dpr);
+      gl.uniform1f(u.morph, morph);
+      if (morph > 0 && shapeSvg) {
+        const r = shapeSvg.getBoundingClientRect();
+        gl.uniform4f(u.hill, r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr);
+        gl.uniform1f(u.fill, shapeFill && getComputedStyle(shapeFill).display !== 'none' ? 1 : 0);
+        gl.uniform2fv(u.poly, poly);
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
   }
 
   function loop(now) { if (!active) return; rafId = requestAnimationFrame(loop); draw(now); }
 
+  function animateMorph(to, dur, done) {
+    morphAnim = { from: morph, to, start: performance.now(), dur: reduce || !gl ? 0.001 : dur, done };
+    root.classList.add('is-morph');
+  }
+
   return {
-    show() {
-      if (active) return; active = true;
+    // fromHill: arrive by growing out of the carousel's hill
+    show({ fromHill = false } = {}) {
+      if (active && !fromHill) return;
+      const wasActive = active;
+      active = true;
+      // arriving from the hill: hide the words at once (no fade-out flash), then fade them in at the end
+      if (fromHill) { root.classList.add('is-morph', 'is-snap'); void root.offsetWidth; root.classList.remove('is-snap'); }
       root.classList.add('is-on');
-      progress = 0; onScroll();
-      if (!reduce) boilTimer = setInterval(boil, 100);
-      rafId = requestAnimationFrame(loop);
+      progress = 0;
+      if (fromHill) {
+        morph = 1;
+        animateMorph(0, 0.95, () => root.classList.remove('is-morph'));
+      } else onScroll();
+      if (!reduce && !boilTimer) boilTimer = setInterval(boil, 100);
+      if (!wasActive) rafId = requestAnimationFrame(loop);
+    },
+    // shrink into the carousel's hill, then step away
+    leaveIntoHill(done) {
+      if (!active) { done && done(); return; }
+      animateMorph(1, 0.95, () => { this.hide(); done && done(); });
     },
     hide() {
-      active = false;
-      root.classList.remove('is-on');
-      clearInterval(boilTimer); cancelAnimationFrame(rafId);
+      active = false; morph = 0; morphAnim = null;
+      const snap = root.classList.contains('is-morph');   // ending a morph: vanish at once, don't fade back on top
+      if (snap) root.classList.add('is-snap');
+      root.classList.remove('is-on', 'is-morph');
+      if (snap) { void root.offsetWidth; root.classList.remove('is-snap'); }
+      clearInterval(boilTimer); boilTimer = 0; cancelAnimationFrame(rafId);
     },
     get active() { return active; },
   };
