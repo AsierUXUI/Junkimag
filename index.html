@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=34",
-        "./detail.js": "./detail.js?v=34",
-        "./covers.js": "./covers.js?v=34",
-        "./zine-mesh.js": "./zine-mesh.js?v=34",
-        "./wheel-steps.js": "./wheel-steps.js?v=34",
-        "./trail.js": "./trail.js?v=34",
-        "./gallery.js": "./gallery.js?v=34",
-        "./landing.js": "./landing.js?v=34"
+        "./hero.js": "./hero.js?v=35",
+        "./detail.js": "./detail.js?v=35",
+        "./covers.js": "./covers.js?v=35",
+        "./zine-mesh.js": "./zine-mesh.js?v=35",
+        "./wheel-steps.js": "./wheel-steps.js?v=35",
+        "./trail.js": "./trail.js?v=35",
+        "./gallery.js": "./gallery.js?v=35",
+        "./landing.js": "./landing.js?v=35"
       }
     }
   </script>
@@ -157,6 +157,9 @@
       font: inherit; background: none; border: 0; cursor: pointer; padding: 4px 0;
     }
     .nav__link:hover, .nav__link:focus-visible { color: var(--ink); }
+    .nav .nav__icon { display: none; }
+    /* a zine's own page: only its Back link, no main nav */
+    .is-detail .site-header { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .4s var(--ease-io), visibility 0s .4s; }
     .nav__link.is-active { color: var(--ink); }
     .nav__link.is-active::after {
       content: ''; position: absolute; left: 50%; bottom: -5px; width: 3px; height: 3px;
@@ -379,12 +382,15 @@
       border-radius: 500px; border: 1px solid rgba(17,17,17,.25); font-size: 13px; font-weight: 500;
     }
     .zmeta__cta { display: flex; justify-content: center; margin-top: 72px; }
+    .btn .btn__icon { width: 18px; height: 18px; margin: -4px -2px -4px -6px; }
     .btn {
       display: inline-flex; align-items: center; gap: 12px; text-decoration: none; cursor: pointer;
       font-family: var(--label); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
       color: var(--paper); background: var(--ink); border: 1px solid var(--ink); border-radius: 500px; padding: 16px 26px;
       transition: background .3s var(--ease-io), color .3s var(--ease-io);
     }
+    .btn:has(.btn__icon)::before { content: none; }
+    .btn .btn__icon { color: var(--pink); }
     .btn::before { content: ''; width: 7px; height: 7px; background: var(--pink); transform: rotate(45deg); }
     .btn:hover, .btn:focus-visible { background: var(--pink); color: var(--ink); }
     .btn:hover::before, .btn:focus-visible::before { background: var(--ink); }
@@ -487,7 +493,7 @@
     .site-footer__contact { text-align: right; }
     /* the Junki logo, printed pink: the PNG is used as a mask so it takes any ink */
     .site-footer__logo {
-      width: 92vw; aspect-ratio: 647 / 294; margin: 72px auto -3vw; background: var(--pink);
+      width: 92vw; aspect-ratio: 647 / 294; margin: 72px auto 28px; background: var(--pink);
       -webkit-mask: url(img/junki-logo.png) center / contain no-repeat; mask: url(img/junki-logo.png) center / contain no-repeat;
     }
 
@@ -501,7 +507,11 @@
       .zmeta { padding-top: 24px; padding-bottom: 32px; }
       .zmeta__cta { margin-top: 36px; }
       .scroll-hint { bottom: 72px; }
-      .zhero__back { top: 84px; }
+      .zhero__back { top: 20px; }
+      /* one pixel icon per link instead of the word */
+      .nav__text { display: none; }
+      .nav .nav__icon { display: block; width: 22px; height: 22px; }
+      .nav__link { padding: 4px; }
       .zmeta__table { width: auto; margin: 0 var(--gutter); grid-template-columns: 1fr; }
       .zmeta__col { padding: 20px 0; }
       .zmeta__col + .zmeta__col::before { left: 0; right: 0; width: auto; height: 1px; bottom: auto; transform-origin: left; }
@@ -537,8 +547,10 @@
     .is-morphing .stage-gl { opacity: 1 !important; transition: none; }
     #landing-track { display: none; height: 260vh; height: 260svh; }
     .is-landing #landing-track { display: block; }
-    .is-landing .nav__logo { opacity: 0; pointer-events: none; }   /* the big logo is the landing */
-    .is-landing .nav__link { background: var(--paper); padding: 4px 10px; border-radius: 500px; color: var(--ink); }
+    /* over the drawing: the whole nav sits on a paper pill */
+    .is-landing .nav { background: var(--paper); padding: 6px 16px 6px 10px; border-radius: 500px; }
+    .is-landing .nav__logo { height: clamp(30px, 2.8vw, 44px); }
+    .is-landing .nav__link { color: var(--ink); }
     /* the drawing, alive: one full-screen canvas behind everything */
     #eye { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
     #landing.no-gl #eye { background: var(--paper) url(img/jonas-drawing.webp) center / 900px auto repeat; }
@@ -688,9 +700,9 @@
       <a class="nav__logo" href="index.html" data-view="landing" aria-label="Junki Magazine, home">
         <img src="img/junki-logo.png" alt="Junki Magazine">
       </a>
-      <a class="nav__link" href="index.html" data-view="landing">Home</a>
-      <a class="nav__link is-active" href="index.html?view=zines" data-view="zines" aria-current="page">Zines</a>
-      <a class="nav__link" href="index.html?view=about" data-view="about">About us</a>
+      <a class="nav__link" href="index.html" data-view="landing" aria-label="Home"><i class="px nav__icon" style="--px:url(img/icons/pixel/interface-essential-home-1.svg)" aria-hidden="true"></i><span class="nav__text">Home</span></a>
+      <a class="nav__link is-active" href="index.html?view=zines" data-view="zines" aria-label="Zines" aria-current="page"><i class="px nav__icon" style="--px:url(img/icons/pixel/content-files-open-book.svg)" aria-hidden="true"></i><span class="nav__text">Zines</span></a>
+      <a class="nav__link" href="index.html?view=about" data-view="about" aria-label="About us"><i class="px nav__icon" style="--px:url(img/icons/pixel/multiple-user.svg)" aria-hidden="true"></i><span class="nav__text">About us</span></a>
     </nav>
   </header>
 
@@ -787,7 +799,7 @@
         <h1 class="zhero__title" id="zine-title" data-reveal="chars"></h1>
         <div class="zhero__lead">
           <p class="zhero__desc" id="hero-desc" data-reveal="lines" data-delay="250"></p>
-          <button class="btn zhero__cta" type="button" id="hero-order" data-reveal-self>Order a copy</button>
+          <button class="btn zhero__cta" type="button" id="hero-order" data-reveal-self><i class="px btn__icon" style="--px:url(img/icons/pixel/shopping-shipping-cart.svg)" aria-hidden="true"></i>Order a copy</button>
         </div>
         <a class="zhero__back" href="index.html?view=zines" data-home aria-label="Back to all zines">
           <i class="px zhero__back-icon" style="--px:url(img/icons/pixel/interface-essential-navigation-left-circle-2.svg)" aria-hidden="true"></i>
@@ -802,7 +814,7 @@
 
     <section class="zmeta" id="zmeta" data-reveal-self aria-label="Details">
       <div class="zmeta__table" id="zmeta-table"></div>
-      <div class="zmeta__cta"><button class="btn" type="button" id="order-btn">Order a copy</button></div>
+      <div class="zmeta__cta"><button class="btn" type="button" id="order-btn"><i class="px btn__icon" style="--px:url(img/icons/pixel/shopping-shipping-cart.svg)" aria-hidden="true"></i>Order a copy</button></div>
     </section>
 
     <!-- the ribbon stays pinned while you scroll through this section; scrolling moves the photos -->
@@ -841,9 +853,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=34"></script>
+  <script src="zines.js?v=35"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=34"></script>
+  <script src="order.js?v=35"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -852,6 +864,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=34"></script>
+  <script type="module" src="hero.js?v=35"></script>
 </body>
 </html>

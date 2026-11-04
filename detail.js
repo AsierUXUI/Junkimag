@@ -15,6 +15,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const CART = '<i class="px btn__icon" style="--px:url(img/icons/pixel/shopping-shipping-cart.svg)" aria-hidden="true"></i>';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -91,7 +92,7 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
 
     titleEl.dataset.text = zine.title;
     $('hero-desc').dataset.src = esc(zine.intro || zine.description || '');
-    $('hero-order').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
+    $('hero-order').innerHTML = CART + (zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy');
 
     const cols = [
       zine.contents
@@ -102,7 +103,7 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     ];
     $('zmeta-table').innerHTML = '<span class="zmeta__rule"></span>' + cols.map(([label, value]) =>
       `<div class="zmeta__col"><p class="label zmeta__label">${esc(label)}</p>${value}</div>`).join('');
-    $('order-btn').textContent = zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy';
+    $('order-btn').innerHTML = CART + (zine.price ? `Order a copy · ${window.junkiPrice(zine)}` : 'Order a copy');
 
     buildOthers(zine);
     slider.setZine(zine);
