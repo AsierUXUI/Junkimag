@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=33",
-        "./detail.js": "./detail.js?v=33",
-        "./covers.js": "./covers.js?v=33",
-        "./zine-mesh.js": "./zine-mesh.js?v=33",
-        "./wheel-steps.js": "./wheel-steps.js?v=33",
-        "./trail.js": "./trail.js?v=33",
-        "./gallery.js": "./gallery.js?v=33",
-        "./landing.js": "./landing.js?v=33"
+        "./hero.js": "./hero.js?v=34",
+        "./detail.js": "./detail.js?v=34",
+        "./covers.js": "./covers.js?v=34",
+        "./zine-mesh.js": "./zine-mesh.js?v=34",
+        "./wheel-steps.js": "./wheel-steps.js?v=34",
+        "./trail.js": "./trail.js?v=34",
+        "./gallery.js": "./gallery.js?v=34",
+        "./landing.js": "./landing.js?v=34"
       }
     }
   </script>
@@ -593,8 +593,25 @@
 
     /* ════════ About view ════════ */
     #about { display: none; position: relative; }
-    .is-about #about { display: block; animation: view-in .6s var(--ease-io); }
-    @keyframes view-in { from { opacity: 0; transform: translateY(14px); } }
+    .is-about #about { display: block; }
+    /* About prints in line by line (each line gets --i from hero.js) */
+    #about.is-reveal :is(h1, .lead, .crew .label, .crew__list li, .crew__note, .row, .credits) {
+      animation: about-line .8s var(--ease-out) calc(.08s + var(--i, 0) * 55ms) both;
+    }
+    @keyframes about-line { from { opacity: 0; transform: translateY(26px); } }
+    @media (prefers-reduced-motion: reduce) { #about.is-reveal * { animation: none !important; } }
+
+    /* About ↔ the rest: the lime hill rises to fill the screen and lifts away (shape drawn by hero.js) */
+    #wipe {
+      position: fixed; inset: 0; z-index: 35; visibility: hidden; pointer-events: none;
+      background: linear-gradient(170deg, #E4FF5C, #8EE000 80%);
+    }
+    #wipe.is-on { visibility: visible; pointer-events: auto; }
+    #wipe i {
+      position: absolute; inset: 0; background: var(--ink); opacity: .13;
+      -webkit-mask: url(img/jonas-drawing.webp) center top / min(1400px, 140vw) auto repeat;
+      mask: url(img/jonas-drawing.webp) center top / min(1400px, 140vw) auto repeat;
+    }
     #about .label .px { margin-right: 8px; width: 16px; height: 16px; vertical-align: -4px; }
     #about main {
       position: relative; z-index: 1;
@@ -760,6 +777,7 @@
       <p class="credits">Icons: <a href="https://www.streamlinehq.com/icons/pixel" target="_blank" rel="noopener">Pixel by Streamline</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</p>
     </main>
   </section>
+  <div id="wipe" aria-hidden="true"><i></i></div>
 
 
   <!-- Zine detail view (index.html?zine=<slug>). Filled in by detail.js. -->
@@ -823,9 +841,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=33"></script>
+  <script src="zines.js?v=34"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=33"></script>
+  <script src="order.js?v=34"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -834,6 +852,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=33"></script>
+  <script type="module" src="hero.js?v=34"></script>
 </body>
 </html>

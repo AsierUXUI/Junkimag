@@ -886,17 +886,17 @@ function init() {
     if (slideIn && !reduce) { away = 0; slide = { dir: 1, start: clock }; marksDirty = true; }
   }
 
-  function go(view, { push = true } = {}) {
+  function switchView(view, { push = true } = {}) {
     if (view === 'zines') {
       if (mode === 'home') return;
       if (mode === 'detail') { closeDetail({ push }); return; }
-      const fromHome = mode === 'landing';
+      const fromHome = mode === 'landing', fromAbout = mode === 'about';
       // Home → Zines: the drawing shrinks into the lime hill while the zines slide in
       if (fromHome) landing.leaveIntoHill();
       leavePage({ keepLanding: fromHome });
       mode = 'home';
       if (push) history.pushState({}, '', viewUrl('zines'));
-      enterCarousel({ slideIn: fromHome });
+      enterCarousel({ slideIn: fromHome || fromAbout });
       hero.focus({ preventScroll: true });
     } else {
       if (mode === view) return;
@@ -907,6 +907,7 @@ function init() {
       if (hillToHome) { html.classList.add('is-morphing'); slide = { dir: -1, start: clock }; setPill(null); }
       mode = view;
       html.classList.add(view === 'landing' ? 'is-landing' : 'is-about');
+      if (view === 'about') { aboutEl.classList.remove('is-reveal'); void aboutEl.offsetWidth; aboutEl.classList.add('is-reveal'); }
       detail.pageScroll(true);
       if (view === 'landing') landing.show({ fromHill: hillToHome });
       setPill(null);
@@ -915,6 +916,73 @@ function init() {
     document.title = TITLES[mode] || TITLES.landing;
     updateNav();
     marksDirty = true; dirty = true;
+  }
+
+  // ── About ↔ the rest: the lime hill rises to fill the screen, the view
+  // changes behind it, then it lifts away (or sinks back into the hill)
+  const aboutEl = $('about'), wipeEl = $('wipe');
+  aboutEl.querySelectorAll(':is(h1, .lead, .crew .label, .crew__list li, .crew__note, .row, .credits)')
+    .forEach((el, i) => el.style.setProperty('--i', i));
+  const hillD = document.querySelector('#shape path[fill]').getAttribute('d');
+  const hillNums = hillD.match(/-?[\d.]+/g).map(Number);
+  const hillCmds = hillD.replace(/-?[\d.]+/g, '#');
+  // the hill's outline in screen px: where it sits ('hill'), blown up past the
+  // screen edges ('full'), or that big shape parked just below / above the screen
+  function wipePts(state) {
+    const W = innerWidth, H = innerHeight, out = [];
+    if (state === 'hill') {
+      const r = $('shape').getBoundingClientRect(), k = Math.min(r.width / 1030, r.height / 440);
+      const ox = r.left + (r.width - 1030 * k) / 2;
+      for (let i = 0; i < hillNums.length; i += 2) {
+        const y = r.top + hillNums[i + 1] * k;
+        out.push(ox + hillNums[i] * k, hillNums[i + 1] >= 440 ? Math.max(y, H + 2) : y);
+      }
+      return out;
+    }
+    const shift = state === 'below' ? H * 1.4 : state === 'above' ? -H * 1.2 : 0;
+    for (let i = 0; i < hillNums.length; i += 2)
+      out.push(W / 2 + (hillNums[i] - 515) * (0.64 * W / 395), -0.05 * H + (hillNums[i + 1] - 100) * (1.15 * H / 340) + shift);
+    return out;
+  }
+  function wipeTo(from, to, dur, ease) {
+    const a = wipePts(from), b = wipePts(to), t0 = performance.now();
+    return new Promise(res => {
+      const step = now => {
+        const e = ease(clamp((now - t0) / (dur * 1000), 0, 1));
+        let k = 0;
+        const d = hillCmds.replace(/#/g, () => { const v = a[k] + (b[k] - a[k]) * e; k++; return v.toFixed(1); });
+        wipeEl.style.clipPath = `path('${d}')`;
+        if (e < 1) requestAnimationFrame(step); else res();
+      };
+      wipeEl.classList.add('is-on'); wipeEl.style.opacity = 1;
+      step(t0);
+    });
+  }
+  let wiping = false, queued = null;
+  async function go(view, opts = {}) {
+    if (wiping) { queued = [view, opts]; return; }
+    const toAbout = view === 'about' && mode !== 'about', fromAbout = mode === 'about' && view !== 'about';
+    if (reduce || (!toAbout && !fromAbout) || (view === 'zines' && mode === 'detail')) { switchView(view, opts); return; }
+    wiping = true;
+    const io = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    if (toAbout) {
+      // out of the carousel's hill, or up from below
+      await wipeTo(mode === 'home' ? 'hill' : 'below', 'full', 0.75, io);
+      switchView(view, opts); scrollTo(0, 0);
+      await wipeTo('full', 'above', 0.7, easeCubicIn);
+    } else {
+      await wipeTo('below', 'full', 0.65, io);
+      switchView(view, opts); scrollTo(0, 0);
+      if (mode === 'home') {
+        // sink back into the hill, then let the real hill take over
+        await wipeTo('full', 'hill', 0.8, io);
+        wipeEl.style.transition = 'opacity .3s'; wipeEl.style.opacity = 0;
+        await new Promise(r => setTimeout(r, 300)); wipeEl.style.transition = '';
+      } else await wipeTo('full', 'above', 0.7, easeCubicIn);
+    }
+    wipeEl.classList.remove('is-on');
+    wiping = false;
+    if (queued) { const q = queued; queued = null; go(...q); }
   }
 
   // header / footer / landing links that switch views (no page load)
@@ -969,7 +1037,7 @@ function init() {
   const initialView = viewFromUrl();
   const pageFirst = initialView === 'landing' || initialView === 'about';
   if (quick || pageFirst) preloader.classList.add('is-done');
-  if (pageFirst) { html.removeAttribute('data-preload'); go(initialView, { push: false }); }
+  if (pageFirst) { html.removeAttribute('data-preload'); switchView(initialView, { push: false }); }
   else { updateNav(); if (initialView === 'zines') document.title = TITLES.home; }
 
   const ready = (async () => {
