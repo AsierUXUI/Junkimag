@@ -1000,18 +1000,18 @@ function init() {
     const io = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     if (toAbout) {
       // out of the carousel's hill, or up from below
-      await wipeTo(mode === 'home' ? 'hill' : 'below', 'full', 0.75, io);
+      await wipeTo(mode === 'home' ? 'hill' : 'below', 'full', 0.42, io);
       switchView(view, opts); scrollTo(0, 0);
-      await wipeTo('full', 'above', 0.7, easeCubicIn);
+      await wipeTo('full', 'above', 0.42, easeCubicIn);
     } else {
-      await wipeTo('below', 'full', 0.65, io);
+      await wipeTo('below', 'full', 0.4, io);
       switchView(view, opts); scrollTo(0, 0);
       if (mode === 'home') {
         // sink back into the hill, then let the real hill take over
-        await wipeTo('full', 'hill', 0.8, io);
-        wipeEl.style.transition = 'opacity .3s'; wipeEl.style.opacity = 0;
-        await new Promise(r => setTimeout(r, 300)); wipeEl.style.transition = '';
-      } else await wipeTo('full', 'above', 0.7, easeCubicIn);
+        await wipeTo('full', 'hill', 0.5, io);
+        wipeEl.style.transition = 'opacity .2s'; wipeEl.style.opacity = 0;
+        await new Promise(r => setTimeout(r, 200)); wipeEl.style.transition = '';
+      } else await wipeTo('full', 'above', 0.42, easeCubicIn);
     }
     wipeEl.classList.remove('is-on');
     wiping = false;
