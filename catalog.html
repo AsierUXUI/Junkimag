@@ -152,8 +152,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="zines.js?v=35"></script>
-  <script src="order.js?v=35"></script>
+  <script src="zines.js?v=36"></script>
+  <script src="order.js?v=36"></script>
   <script>
     // Zines come from zines.js (shared with the home page hero).
     var ZINES = window.JUNKI_ZINES || [];
@@ -196,7 +196,7 @@
   <!-- Generated riso covers for zines without a cover image (same as the hero) -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
   <script type="module">
-    import { makeCover } from './covers.js?v=35';
+    import { makeCover } from './covers.js?v=36';
     document.querySelectorAll('[data-cover]').forEach(async function (el) {
       var zine = (window.JUNKI_ZINES || []).find(function (z) { return z.slug === el.dataset.cover; });
       if (!zine) return;

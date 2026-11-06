@@ -279,5 +279,6 @@ export function createDetailView({ zines, onOpenZine, onHome, showPill }) {
     jumpTop();
   }
 
-  return { show, hide, tick, scroll, heroButtonBottom, pageScroll, get zine() { return current; } };
+  const jumpTo = y => { if (lenis) lenis.scrollTo(y, { immediate: true, force: true }); else window.scrollTo(0, y); };
+  return { show, hide, tick, scroll, heroButtonBottom, pageScroll, jumpTo, get zine() { return current; } };
 }

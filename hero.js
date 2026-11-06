@@ -192,7 +192,7 @@ function init() {
   let x = startIndex, v = 0, target = startIndex;   // spring on the float index
   let dirty = true, lastT = performance.now(), clock = 0;
   let introStart = -1, introDone = reduce;
-  let mode = 'home', detailIndex = -1, away = 0;
+  let mode = 'home', detailIndex = -1, away = 0, viewSince = -10, endSince = 0;
   let slide = null;   // { dir: 1 in from the right | -1 out to the right, start }      // away: 0 = row in view, 1 = row gone (detail view)
   const detailTilt = { x: 0, y: 0 };
   let hovered = null, pointer = { x: -1e4, y: -1e4, nx: 0, ny: 0, ndc: new THREE.Vector2(), inside: false };
@@ -202,6 +202,7 @@ function init() {
   function goTo(i, { fromUser = true } = {}) {
     const t = clamp(Math.round(i), 0, N - 1);
     if (t === target) return;
+    endSince = 0;
     target = t;
     if (reduce) { x = t; v = 0; }
     startMarks(t);
@@ -647,7 +648,16 @@ function init() {
   }
 
   // ── Input: wheel ───────────────────────────────────────────────────
-  const wheelSteps = createWheelStepper(CONFIG, dir => step(dir));
+  // scrolling past either end of the row moves on to the neighbouring page
+  // (only once the row has rested at that end for a moment, so momentum doesn't carry you through)
+  function edgeStep(dir) {
+    const atEnd = dir > 0 ? target === N - 1 : target === 0;
+    if (!atEnd) { step(dir); endSince = 0; return; }
+    const now = performance.now();
+    if (!endSince) { endSince = now; return; }
+    if (now - endSince > 450 && clock - viewSince > 1.2) go(dir > 0 ? 'about' : 'landing');
+  }
+  const wheelSteps = createWheelStepper(CONFIG, dir => edgeStep(dir));
   addEventListener('wheel', e => {
     if (mode !== 'home') return;   // the detail view scrolls normally
     e.preventDefault();
@@ -711,6 +721,8 @@ function init() {
       drag.moved = true;
       // a mouse drag on a zine flips it; anything else swipes the row
       drag.mode = (drag.item && e.pointerType !== 'touch' && !reduce) ? 'spin' : 'swipe';
+      // a mostly-vertical finger swipe moves between pages (up: About, down: Home)
+      if (e.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx) * 1.4) drag.mode = 'page';
       if (drag.mode === 'swipe') swipe = { start: x, live: x, vel: 0, lastX: e.clientX, lastT: now };
       hero.classList.add('is-grabbing');
       setPill(null);
@@ -755,6 +767,9 @@ function init() {
       if (d.item && e.type === 'pointerup') {
         if (d.item.i === target) open(target); else goTo(d.item.i);
       }
+    } else if (d.mode === 'page') {
+      const dy = e.clientY - d.y0;
+      if (Math.abs(dy) > 70 && clock - viewSince > 0.8) go(dy < 0 ? 'about' : 'landing');
     } else if (d.mode === 'spin') {
       d.item.spinVel = d.vel;
     } else if (swipe) {
@@ -842,7 +857,7 @@ function init() {
 
   // ── Views: Home (landing) / Zines (carousel) / a zine / About ────────
   const html = document.documentElement;
-  const landing = createLanding({ root: $('landing') });
+  const landing = createLanding({ root: $('landing'), jump: y => detail.jumpTo(y), onScrolledIn: () => { if (mode === 'landing') go('zines'); } });
   const TITLES = { landing: 'Junki Magazine', home: 'Zines — Junki Magazine', about: 'About — Junki Magazine' };
   const viewOf = m => (m === 'home' || m === 'detail' ? 'zines' : m);
 
@@ -887,6 +902,7 @@ function init() {
   }
 
   function switchView(view, { push = true } = {}) {
+    viewSince = clock;
     if (view === 'zines') {
       if (mode === 'home') return;
       if (mode === 'detail') { closeDetail({ push }); return; }
@@ -959,6 +975,22 @@ function init() {
     });
   }
   let wiping = false, queued = null;
+
+  // About: pulling down past the top goes back to the zines
+  let pull = 0, pullT = 0, touchY = null;
+  const atTop = () => mode === 'about' && !wiping && detail.scroll() <= 2 && window.scrollY <= 2 && clock - viewSince > 1.2;
+  addEventListener('wheel', e => {
+    if (!atTop() || e.deltaY >= 0) { pull = 0; return; }
+    const now = performance.now(); if (now - pullT > 400) pull = 0; pullT = now;
+    pull += -e.deltaY * (e.deltaMode === 1 ? 30 : 1);
+    if (pull > 260) { pull = 0; go('zines'); }
+  }, { passive: true });
+  addEventListener('touchstart', e => { touchY = atTop() ? e.touches[0].clientY : null; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (touchY == null) return;
+    const dy = e.changedTouches[0].clientY - touchY; touchY = null;
+    if (dy > 110 && atTop()) go('zines');
+  }, { passive: true });
   async function go(view, opts = {}) {
     if (wiping) { queued = [view, opts]; return; }
     const toAbout = view === 'about' && mode !== 'about', fromAbout = mode === 'about' && view !== 'about';
