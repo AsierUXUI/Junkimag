@@ -857,12 +857,12 @@ function init() {
 
   // ── Views: Home (landing) / Zines (carousel) / a zine / About ────────
   const html = document.documentElement;
-  const landing = createLanding({ root: $('landing'), jump: y => detail.jumpTo(y), onScrolledIn: () => { if (mode === 'landing') go('zines'); } });
+  const landing = createLanding({ root: $('landing'), jump: y => detail.jumpTo(y), onScrolledIn: () => { if (mode === 'landing') go('zines'); }, onSection: v => { if (mode === 'landing') updateNav(v); } });
   const TITLES = { landing: 'Junki Magazine', home: 'Zines — Junki Magazine', about: 'About — Junki Magazine' };
   const viewOf = m => (m === 'home' || m === 'detail' ? 'zines' : m);
 
-  function updateNav() {
-    const v = viewOf(mode);
+  function updateNav(focus) {
+    const v = focus || viewOf(mode);
     document.querySelectorAll('.nav [data-view]').forEach(a => {
       const on = a.dataset.view === v && a.classList.contains('nav__link');
       a.classList.toggle('is-active', on);

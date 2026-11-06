@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=36",
-        "./detail.js": "./detail.js?v=36",
-        "./covers.js": "./covers.js?v=36",
-        "./zine-mesh.js": "./zine-mesh.js?v=36",
-        "./wheel-steps.js": "./wheel-steps.js?v=36",
-        "./trail.js": "./trail.js?v=36",
-        "./gallery.js": "./gallery.js?v=36",
-        "./landing.js": "./landing.js?v=36"
+        "./hero.js": "./hero.js?v=37",
+        "./detail.js": "./detail.js?v=37",
+        "./covers.js": "./covers.js?v=37",
+        "./zine-mesh.js": "./zine-mesh.js?v=37",
+        "./wheel-steps.js": "./wheel-steps.js?v=37",
+        "./trail.js": "./trail.js?v=37",
+        "./gallery.js": "./gallery.js?v=37",
+        "./landing.js": "./landing.js?v=37"
       }
     }
   </script>
@@ -105,6 +105,10 @@
     /* the 3D zines step out on Home and About */
     .stage-gl { transition: opacity .5s var(--ease-io); }
     .is-landing .stage-gl, .is-about .stage-gl { opacity: 0; }
+    /* Home → Zines by scrolling: the real hill, its ring of words and the issue notes
+       fade in underneath as the landing's own hill fades out (--hill-in set by landing.js) */
+    .is-landing .shape-layer { opacity: var(--hill-in, 0); transition: none; }
+    .is-landing .ui { opacity: calc(var(--hill-in, 0) * 2 - 1); transition: none; }
     .hero__scribble { z-index: 3; }
 
     /* back layer: riso-blue hill + rotating circular text */
@@ -535,12 +539,12 @@
     /* morphing into / out of the carousel's hill: the landing slips under the 3D zines
        so they can slide in over it, and its words step aside */
     #landing.is-morph { z-index: 1; pointer-events: none; transition: none; }
-    #landing.is-morph .mark, #landing.is-morph .tagline, #landing.is-morph .hint, #landing.is-morph .enter {
+    #landing.is-morph .mark, #landing.is-morph .tagline, #landing.is-morph .hint {
       opacity: 0 !important; transition: opacity .35s var(--ease-io);
     }
     #landing.is-snap, #landing.is-snap * { transition: none !important; }
     .is-morphing .stage-gl { opacity: 1 !important; transition: none; }
-    #landing-track { display: none; height: 420vh; height: 420svh; }
+    #landing-track { display: none; height: 300vh; height: 300svh; }
     .is-landing #landing-track { display: block; }
     /* over the drawing: a soft paper fade behind the (standard) nav */
     .is-landing .site-header::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 110px; pointer-events: none;
@@ -581,16 +585,6 @@
     @keyframes hint-in { from { opacity: 0; transform: translate(-50%, 10px); } }
 
     /* end of the dive */
-    #landing .enter {
-      position: fixed; left: 50%; top: 50%; z-index: 6; transform: translate(-50%, -50%) scale(var(--enter-s, .9));
-      opacity: var(--enter-o, 0); pointer-events: var(--enter-pe, none);
-      display: inline-flex; align-items: center; gap: 12px; text-decoration: none; white-space: nowrap;
-      font-family: var(--label); font-size: 13px; letter-spacing: .2em; text-transform: uppercase;
-      color: var(--paper); background: var(--ink); border-radius: 500px; padding: 18px 28px;
-    }
-    #landing .enter::before { content: ''; width: 8px; height: 8px; background: var(--pink); transform: rotate(45deg); }
-    #landing .enter:hover { background: var(--pink); color: var(--ink); }
-    #landing .enter:hover::before { background: var(--ink); }
 
     @media (max-width: 640px) {
       #landing .mark { top: 40%; width: 86vw; }
@@ -744,7 +738,6 @@
     <h1 class="mark" aria-label="Junki Magazine"><span class="mark__ink mark__ink--b"></span><span class="mark__ink mark__ink--a"></span></h1>
     <p class="tagline">Psychadelic Mysticism delivered by Mind Inc.</p>
     <p class="hint">Scroll to look into the eye ↓</p>
-    <a class="enter" href="index.html?view=zines" data-view="zines">Enter the zines</a>
   </div>
   <div id="landing-track" aria-hidden="true"></div>
 
@@ -847,9 +840,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=36"></script>
+  <script src="zines.js?v=37"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=36"></script>
+  <script src="order.js?v=37"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -858,6 +851,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=36"></script>
+  <script type="module" src="hero.js?v=37"></script>
 </body>
 </html>
