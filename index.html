@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=39",
-        "./detail.js": "./detail.js?v=39",
-        "./covers.js": "./covers.js?v=39",
-        "./zine-mesh.js": "./zine-mesh.js?v=39",
-        "./wheel-steps.js": "./wheel-steps.js?v=39",
-        "./trail.js": "./trail.js?v=39",
-        "./gallery.js": "./gallery.js?v=39",
-        "./landing.js": "./landing.js?v=39"
+        "./hero.js": "./hero.js?v=40",
+        "./detail.js": "./detail.js?v=40",
+        "./covers.js": "./covers.js?v=40",
+        "./zine-mesh.js": "./zine-mesh.js?v=40",
+        "./wheel-steps.js": "./wheel-steps.js?v=40",
+        "./trail.js": "./trail.js?v=40",
+        "./gallery.js": "./gallery.js?v=40",
+        "./landing.js": "./landing.js?v=40"
       }
     }
   </script>
@@ -598,7 +598,7 @@
     .is-about #about { display: block; }
     /* About prints in line by line (each line gets --i from hero.js) */
     #about.is-reveal :is(h1, .lead, .crew .label, .crew__list li, .crew__note, .row, .credits) {
-      animation: about-line .8s var(--ease-out) calc(.08s + var(--i, 0) * 55ms) both;
+      animation: about-line .6s var(--ease-out) calc(var(--i, 0) * 28ms) both;
     }
     @keyframes about-line { from { opacity: 0; transform: translateY(26px); } }
     @media (prefers-reduced-motion: reduce) { #about.is-reveal * { animation: none !important; } }
@@ -842,9 +842,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=39"></script>
+  <script src="zines.js?v=40"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=39"></script>
+  <script src="order.js?v=40"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -853,6 +853,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=39"></script>
+  <script type="module" src="hero.js?v=40"></script>
 </body>
 </html>
