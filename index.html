@@ -19,14 +19,14 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "./hero.js": "./hero.js?v=38",
-        "./detail.js": "./detail.js?v=38",
-        "./covers.js": "./covers.js?v=38",
-        "./zine-mesh.js": "./zine-mesh.js?v=38",
-        "./wheel-steps.js": "./wheel-steps.js?v=38",
-        "./trail.js": "./trail.js?v=38",
-        "./gallery.js": "./gallery.js?v=38",
-        "./landing.js": "./landing.js?v=38"
+        "./hero.js": "./hero.js?v=39",
+        "./detail.js": "./detail.js?v=39",
+        "./covers.js": "./covers.js?v=39",
+        "./zine-mesh.js": "./zine-mesh.js?v=39",
+        "./wheel-steps.js": "./wheel-steps.js?v=39",
+        "./trail.js": "./trail.js?v=39",
+        "./gallery.js": "./gallery.js?v=39",
+        "./landing.js": "./landing.js?v=39"
       }
     }
   </script>
@@ -120,9 +120,10 @@
       position: absolute; left: 50%; top: 52%; width: 77vw; height: auto;
       transform: translate(-50%, var(--shape-y, 0px)) scale(0.96); transform-origin: 50% 0;
     }
-    /* phones: solid blue from the bottom of the hill shape down to the bottom of the screen */
+    /* the hill continues as solid lime from the bottom of its shape down to the bottom of the screen
+       (on wide screens the shape already reaches past the bottom, so this collapses to nothing) */
     .shape-layer__fill {
-      display: none; position: absolute; left: 50%; bottom: 0; background: #8EE000;   /* continues the lime gradient's end colour */
+      display: block; position: absolute; left: 50%; bottom: 0; background: #8EE000;   /* continues the lime gradient's end colour */
       overflow: hidden;
       width: calc(77vw * 0.96); top: calc(52% + 77vw * 440 / 1030 * 0.96 - 2px);
       transform: translate(-50%, var(--shape-y, 0px));
@@ -130,7 +131,7 @@
     .shape-layer__fill::after {
       content: ''; position: absolute; inset: 0; background: var(--ink); opacity: .13;
       -webkit-mask-image: url(img/jonas-drawing.webp); mask-image: url(img/jonas-drawing.webp);
-      -webkit-mask-size: 144vw auto; mask-size: 144vw auto; -webkit-mask-repeat: repeat; mask-repeat: repeat;
+      -webkit-mask-size: calc(77vw * 0.96) auto; mask-size: calc(77vw * 0.96) auto; -webkit-mask-repeat: repeat; mask-repeat: repeat;
     }
     .shape-layer__badge {
       position: absolute; left: 50%; top: calc(52% - 6vw); width: 90vw; height: 90vw;
@@ -285,6 +286,7 @@
       .see-more { display: flex; }
       .shape-layer__shape { width: 150vw; top: 62%; }
       .shape-layer__fill { display: block; width: calc(150vw * 0.96); top: calc(62% + 150vw * 440 / 1030 * 0.96 - 2px); }
+      .shape-layer__fill::after { -webkit-mask-size: 144vw auto; mask-size: 144vw auto; }
       .shape-layer__badge { width: 170vw; height: 170vw; margin-left: -85vw; top: calc(62% - 12vw); }
     }
 
@@ -840,9 +842,9 @@
   <div class="cursor-pill" id="cursor-pill" aria-hidden="true"><div class="cursor-pill__inner" id="cursor-pill-text">Peep this</div></div>
   <div class="sr-only" aria-live="polite" id="live"></div>
 
-  <script src="zines.js?v=38"></script>
+  <script src="zines.js?v=39"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="order.js?v=38"></script>
+  <script src="order.js?v=39"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script>
     // Failsafe: never leave the page hidden behind the preloader.
@@ -851,6 +853,6 @@
       document.getElementById('preloader').classList.add('is-done');
     }, 20000);
   </script>
-  <script type="module" src="hero.js?v=38"></script>
+  <script type="module" src="hero.js?v=39"></script>
 </body>
 </html>
