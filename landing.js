@@ -5,13 +5,13 @@
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn = () => {} }) {
+export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn = () => {}, onSection = () => {} }) {
   const canvas = root.querySelector('#eye');
   const inks = root.querySelectorAll('.mark__ink');
   const track = document.getElementById('landing-track');
   let active = false, progress = 0, boilTimer = 0, rafId = 0, morph = 0, morphAnim = null;
   // scroll: the first half dives into the eye, the second half closes the paper in around the hill
-  const DIVE_END = 0.5, HILL_END = 0.97;
+  const DIVE_END = 0.45, HILL_END = 0.97;
   let dive = 0, scrollMorph = 0, handedOff = false;
   const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: true, alpha: true });
   if (!gl) root.classList.add('no-gl');
@@ -38,14 +38,11 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
     root.style.setProperty('--p', dive.toFixed(3));
     root.style.setProperty('--mark-s', (1 + dive * 1.6).toFixed(3));
     root.style.setProperty('--mark-o', Math.max(0, 1 - dive * 2.2).toFixed(3));
-    // the "go to the zines" pill shows at the bottom of the dive, then steps aside for the hill
-    const e = Math.min(1, Math.max(0, (dive - 0.8) / 0.18)) * (1 - Math.min(1, scrollMorph * 6));
+    // the nav follows: once the hill is taking shape, we're in the zines
+    onSection(scrollMorph > 0.35 ? 'zines' : 'landing');
     // scrolled all the way: the hill is formed, hand over to the zines
     if (progress >= 0.985 && !handedOff) { handedOff = true; onScrolledIn(); }
     if (progress < 0.9) handedOff = false;
-    root.style.setProperty('--enter-o', e.toFixed(3));
-    root.style.setProperty('--enter-s', (0.9 + e * 0.1).toFixed(3));
-    root.style.setProperty('--enter-pe', e > 0.5 ? 'auto' : 'none');
   }
   addEventListener('scroll', onScroll, { passive: true });
 
@@ -165,6 +162,8 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
         col = mix(col, INK, line * 0.85 * (1.0 - smoothstep(0.75, 1.0, uMorph)));
         // at the end, everything outside the hill turns see-through so the zines show
         alpha = mix(1.0, max(inHill, line * (1.0 - smoothstep(0.75, 1.0, uMorph))), smoothstep(0.5, 1.0, uMorph));
+        // last stretch: hand over to the real hill (same place, same lime) underneath
+        alpha *= 1.0 - smoothstep(0.82, 1.0, uMorph);
       }
 
       // paper grain
@@ -250,6 +249,8 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
       gl.uniform2f(u.lens, lens[0] * (1 - ease), lens[1] * (1 - ease));
       gl.uniform1f(u.dpr, dpr);
       gl.uniform1f(u.morph, m);
+      const hin = Math.min(1, Math.max(0, (m - 0.62) / 0.3));
+      document.documentElement.style.setProperty('--hill-in', (hin * hin * (3 - 2 * hin)).toFixed(3));
       if (m > 0 && shapeSvg) {
         const r = shapeSvg.getBoundingClientRect();
         gl.uniform4f(u.hill, r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr);
@@ -284,6 +285,7 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
       root.classList.add('is-on');
       progress = 0; dive = 0; scrollMorph = 0; handedOff = false;
       document.documentElement.style.setProperty('--hill', '0');
+      document.documentElement.style.setProperty('--hill-in', fromHill ? '1' : '0');
       if (fromHill) {
         // come back up to the bottom of the dive (inside the eye), then the hill grows back out
         const max = Math.max(1, track.offsetHeight - innerHeight);
