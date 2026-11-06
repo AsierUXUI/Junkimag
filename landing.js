@@ -42,7 +42,7 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
     onSection(scrollMorph > 0.35 ? 'zines' : 'landing');
     // scrolled all the way: the hill is formed, hand over to the zines
     if (progress >= 0.985 && !handedOff) { handedOff = true; onScrolledIn(); }
-    if (progress < 0.9) handedOff = false;
+    if (progress < 0.97) handedOff = false;
   }
   addEventListener('scroll', onScroll, { passive: true });
 
@@ -276,17 +276,23 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
 
   return {
     // fromHill: arrive by growing out of the carousel's hill
-    show({ fromHill = false } = {}) {
+    // atEnd: scrolled back up from the zines — start at the bottom of the scroll, hill formed, and let scrolling undo it
+    show({ fromHill = false, atEnd = false } = {}) {
       if (active && !fromHill) return;
       const wasActive = active;
       active = true;
       // arriving from the hill: hide the words at once (no fade-out flash), then fade them in at the end
-      if (fromHill) { root.classList.add('is-morph', 'is-snap'); void root.offsetWidth; root.classList.remove('is-snap'); }
+      if (fromHill && !atEnd) { root.classList.add('is-morph', 'is-snap'); void root.offsetWidth; root.classList.remove('is-snap'); }
       root.classList.add('is-on');
       progress = 0; dive = 0; scrollMorph = 0; handedOff = false;
       document.documentElement.style.setProperty('--hill', '0');
-      document.documentElement.style.setProperty('--hill-in', fromHill ? '1' : '0');
-      if (fromHill) {
+      document.documentElement.style.setProperty('--hill-in', fromHill || atEnd ? '1' : '0');
+      if (atEnd) {
+        const max = Math.max(1, track.offsetHeight - innerHeight);
+        jump(Math.round(max * 0.955));
+        handedOff = true;
+        onScroll();
+      } else if (fromHill) {
         // come back up to the bottom of the dive (inside the eye), then the hill grows back out
         const max = Math.max(1, track.offsetHeight - innerHeight);
         jump(Math.round(max * DIVE_END * 0.96));
@@ -312,6 +318,7 @@ export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn =
       if (snap) { void root.offsetWidth; root.classList.remove('is-snap'); }
       clearInterval(boilTimer); boilTimer = 0; cancelAnimationFrame(rafId);
     },
+    refresh() { onScroll(); },
     get active() { return active; },
   };
 }

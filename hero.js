@@ -655,7 +655,7 @@ function init() {
     if (!atEnd) { step(dir); endSince = 0; return; }
     const now = performance.now();
     if (!endSince) { endSince = now; return; }
-    if (now - endSince > 450 && clock - viewSince > 1.2) go(dir > 0 ? 'about' : 'landing');
+    if (now - endSince > 450 && clock - viewSince > 1.2) go(dir > 0 ? 'about' : 'landing', { viaScroll: true });
   }
   const wheelSteps = createWheelStepper(CONFIG, dir => edgeStep(dir));
   addEventListener('wheel', e => {
@@ -769,7 +769,7 @@ function init() {
       }
     } else if (d.mode === 'page') {
       const dy = e.clientY - d.y0;
-      if (Math.abs(dy) > 70 && clock - viewSince > 0.8) go(dy < 0 ? 'about' : 'landing');
+      if (Math.abs(dy) > 70 && clock - viewSince > 0.8) go(dy < 0 ? 'about' : 'landing', { viaScroll: true });
     } else if (d.mode === 'spin') {
       d.item.spinVel = d.vel;
     } else if (swipe) {
@@ -901,7 +901,7 @@ function init() {
     if (slideIn && !reduce) { away = 0; slide = { dir: 1, start: clock }; marksDirty = true; }
   }
 
-  function switchView(view, { push = true } = {}) {
+  function switchView(view, { push = true, viaScroll = false } = {}) {
     viewSince = clock;
     if (view === 'zines') {
       if (mode === 'home') return;
@@ -925,12 +925,13 @@ function init() {
       html.classList.add(view === 'landing' ? 'is-landing' : 'is-about');
       if (view === 'about') { aboutEl.classList.remove('is-reveal'); void aboutEl.offsetWidth; aboutEl.classList.add('is-reveal'); }
       detail.pageScroll(true);
-      if (view === 'landing') landing.show({ fromHill: hillToHome });
+      if (view === 'landing') landing.show({ fromHill: hillToHome, atEnd: hillToHome && viaScroll });
       setPill(null);
       if (push) history.pushState({}, '', viewUrl(view));
     }
     document.title = TITLES[mode] || TITLES.landing;
     updateNav();
+    if (mode === 'landing') landing.refresh();   // the nav follows the scroll position
     marksDirty = true; dirty = true;
   }
 
