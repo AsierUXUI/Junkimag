@@ -5,11 +5,14 @@
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function createLanding({ root }) {
+export function createLanding({ root, jump = y => scrollTo(0, y), onScrolledIn = () => {} }) {
   const canvas = root.querySelector('#eye');
   const inks = root.querySelectorAll('.mark__ink');
   const track = document.getElementById('landing-track');
   let active = false, progress = 0, boilTimer = 0, rafId = 0, morph = 0, morphAnim = null;
+  // scroll: the first half dives into the eye, the second half closes the paper in around the hill
+  const DIVE_END = 0.5, HILL_END = 0.97;
+  let dive = 0, scrollMorph = 0, handedOff = false;
   const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: true, alpha: true });
   if (!gl) root.classList.add('no-gl');
 
@@ -26,13 +29,20 @@ export function createLanding({ root }) {
 
   // ── Scroll: dive into the eye (over the landing track) ──────────────
   function onScroll() {
-    if (!active || morph > 0) return;   // frozen while morphing into / out of the hill
+    if (!active || morphAnim) return;   // frozen while morphing into / out of the hill
     const max = Math.max(1, track.offsetHeight - innerHeight);
     progress = Math.min(1, Math.max(0, scrollY / max));
-    root.style.setProperty('--p', progress.toFixed(3));
-    root.style.setProperty('--mark-s', (1 + progress * 1.6).toFixed(3));
-    root.style.setProperty('--mark-o', Math.max(0, 1 - progress * 2.2).toFixed(3));
-    const e = Math.min(1, Math.max(0, (progress - 0.78) / 0.18));
+    dive = Math.min(1, progress / DIVE_END);
+    scrollMorph = Math.min(1, Math.max(0, (progress - DIVE_END) / (HILL_END - DIVE_END)));
+    document.documentElement.style.setProperty('--hill', scrollMorph.toFixed(3));
+    root.style.setProperty('--p', dive.toFixed(3));
+    root.style.setProperty('--mark-s', (1 + dive * 1.6).toFixed(3));
+    root.style.setProperty('--mark-o', Math.max(0, 1 - dive * 2.2).toFixed(3));
+    // the "go to the zines" pill shows at the bottom of the dive, then steps aside for the hill
+    const e = Math.min(1, Math.max(0, (dive - 0.8) / 0.18)) * (1 - Math.min(1, scrollMorph * 6));
+    // scrolled all the way: the hill is formed, hand over to the zines
+    if (progress >= 0.985 && !handedOff) { handedOff = true; onScrolledIn(); }
+    if (progress < 0.9) handedOff = false;
     root.style.setProperty('--enter-o', e.toFixed(3));
     root.style.setProperty('--enter-s', (0.9 + e * 0.1).toFixed(3));
     root.style.setProperty('--enter-pe', e > 0.5 ? 'auto' : 'none');
@@ -55,6 +65,7 @@ export function createLanding({ root }) {
     uniform vec4 uHill;     // the hill's SVG box in device px from the top-left: x, y, w, h
     uniform float uFill;    // 1 on phones: the hill continues as a solid block below
     uniform vec2 uPoly[32]; // the hill outline, in SVG units (1030 × 440)
+    uniform float uReach;   // device px from the hill to the farthest screen corner
     out vec4 o;
     const vec3 PAPER = vec3(0.949, 0.941, 0.922);
     const vec3 INK   = vec3(0.067);
@@ -133,9 +144,13 @@ export function createLanding({ root }) {
         // where this pixel sits in the hill's SVG
         vec2 css = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
         vec2 sv = (css - uHill.xy) / uHill.zw * vec2(1030.0, 440.0);
-        float inHill = 1.0 - smoothstep(-1.0, 1.0, sdPoly(sv) * uHill.z / 1030.0);
-        if (uFill > 0.5 && sv.y > 400.0 && sv.x >= 0.0 && sv.x <= 1030.0) inHill = 1.0;
+        float dh = sdPoly(sv) * uHill.z / 1030.0;   // device px, negative inside the hill
+        if (uFill > 0.5 && sv.y > 400.0 && sv.x >= 0.0 && sv.x <= 1030.0) dh = min(dh, -2.0);
         float e = smoothstep(0.0, 1.0, uMorph);
+        // the paper closes in from the edges: everything within 'reach' of the hill is still the eye
+        float reach = pow(1.0 - uMorph, 1.25) * uReach;
+        float edge = dh - reach + (noise(vec2(atan(sv.y - 300.0, sv.x - 515.0) * 5.0, floor(t * 10.0))) - 0.5) * 6.0 * uDpr * (1.0 - e);
+        float inHill = 1.0 - smoothstep(-1.0, 1.0, edge);
         // the drawing slides and shrinks from the landing's mapping to the hill's own
         vec2 uvL = q * uTile + 0.5;
         vec2 uvH = vec2(sv.x / 1030.0, (sv.y + 90.0) / 1030.0);
@@ -143,11 +158,13 @@ export function createLanding({ root }) {
         float g = clamp(((sv.x / 1030.0) * 0.35 + (sv.y - 22.0) / 418.0) / 1.1225, 0.0, 1.0);
         vec3 lime = sv.y > 440.0 ? vec3(0.557, 0.878, 0.0) : mix(vec3(0.894, 1.0, 0.361), vec3(0.557, 0.878, 0.0), g);
         vec3 hillCol = mix(lime, INK, aH * mix(0.78, 0.13, e));
-        vec3 inCol = mix(col, hillCol, smoothstep(0.0, 0.6, uMorph));
-        vec3 outCol = mix(col, PAPER, e);
-        col = mix(outCol, inCol, inHill);
+        vec3 inCol = mix(col, hillCol, smoothstep(0.3, 0.9, uMorph));
+        col = mix(PAPER, inCol, inHill);
+        // a hand-drawn outline riding the closing edge
+        float line = 1.0 - smoothstep(1.0 * uDpr, 2.6 * uDpr, abs(edge));
+        col = mix(col, INK, line * 0.85 * (1.0 - smoothstep(0.75, 1.0, uMorph)));
         // at the end, everything outside the hill turns see-through so the zines show
-        alpha = mix(1.0, inHill, smoothstep(0.5, 1.0, uMorph));
+        alpha = mix(1.0, max(inHill, line * (1.0 - smoothstep(0.75, 1.0, uMorph))), smoothstep(0.5, 1.0, uMorph));
       }
 
       // paper grain
@@ -165,7 +182,7 @@ export function createLanding({ root }) {
     const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const U = n => gl.getUniformLocation(prog, n);
     const u = { tex: U('uTex'), res: U('uRes'), time: U('uTime'), tile: U('uTile'), r: U('uR'), zoom: U('uZoom'), lens: U('uLens'), dpr: U('uDpr'),
-      morph: U('uMorph'), hill: U('uHill'), fill: U('uFill'), poly: U('uPoly') };
+      morph: U('uMorph'), reach: U('uReach'), hill: U('uHill'), fill: U('uFill'), poly: U('uPoly') };
 
     // the carousel's hill: its outline (sampled once from the SVG path) and where it sits now
     const shapeSvg = document.getElementById('shape');
@@ -221,8 +238,9 @@ export function createLanding({ root }) {
         morph = morphAnim.from + (morphAnim.to - morphAnim.from) * (k2 < 0.5 ? 4 * k2 * k2 * k2 : 1 - Math.pow(-2 * k2 + 2, 3) / 2);
         if (k2 >= 1) { const done = morphAnim.done; morphAnim = null; done && done(); }
       }
-      const ease = progress * progress * (1 - morph);
-      const baseR = (aspect < 0.8 ? 0.2 : 0.17) * (1 - morph);
+      const m = Math.max(morph, scrollMorph);
+      const ease = dive * dive;
+      const baseR = (aspect < 0.8 ? 0.2 : 0.17);
       gl.uniform1i(u.tex, 0);
       gl.uniform2f(u.res, canvas.width, canvas.height);
       gl.uniform1f(u.time, reduce ? 0 : t);
@@ -231,10 +249,16 @@ export function createLanding({ root }) {
       gl.uniform1f(u.zoom, 1 + ease * 3);
       gl.uniform2f(u.lens, lens[0] * (1 - ease), lens[1] * (1 - ease));
       gl.uniform1f(u.dpr, dpr);
-      gl.uniform1f(u.morph, morph);
-      if (morph > 0 && shapeSvg) {
+      gl.uniform1f(u.morph, m);
+      if (m > 0 && shapeSvg) {
         const r = shapeSvg.getBoundingClientRect();
         gl.uniform4f(u.hill, r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr);
+        // farthest screen corner from the hill's box (its ridge starts ~12% down the box)
+        const k = Math.min(r.width / 1030, r.height / 440), bx0 = r.left + (r.width - 1030 * k) / 2, bx1 = bx0 + 1030 * k, by0 = r.top + 52 * k, by1 = r.top + 440 * k;
+        let far = 0;
+        for (const [cx, cy] of [[0, 0], [innerWidth, 0], [0, innerHeight], [innerWidth, innerHeight]])
+          far = Math.max(far, Math.hypot(Math.max(bx0 - cx, 0, cx - bx1), Math.max(by0 - cy, 0, cy - by1)));
+        gl.uniform1f(u.reach, (far + 12) * dpr);
         gl.uniform1f(u.fill, shapeFill && getComputedStyle(shapeFill).display !== 'none' ? 1 : 0);
         gl.uniform2fv(u.poly, poly);
       }
@@ -258,10 +282,15 @@ export function createLanding({ root }) {
       // arriving from the hill: hide the words at once (no fade-out flash), then fade them in at the end
       if (fromHill) { root.classList.add('is-morph', 'is-snap'); void root.offsetWidth; root.classList.remove('is-snap'); }
       root.classList.add('is-on');
-      progress = 0;
+      progress = 0; dive = 0; scrollMorph = 0; handedOff = false;
+      document.documentElement.style.setProperty('--hill', '0');
       if (fromHill) {
+        // come back up to the bottom of the dive (inside the eye), then the hill grows back out
+        const max = Math.max(1, track.offsetHeight - innerHeight);
+        jump(Math.round(max * DIVE_END * 0.96));
+        progress = DIVE_END * 0.96; dive = 0.96;
         morph = 1;
-        animateMorph(0, 0.95, () => root.classList.remove('is-morph'));
+        animateMorph(0, 0.95, () => { root.classList.remove('is-morph'); onScroll(); });
       } else onScroll();
       if (!reduce && !boilTimer) boilTimer = setInterval(boil, 100);
       if (!wasActive) rafId = requestAnimationFrame(loop);
@@ -269,10 +298,12 @@ export function createLanding({ root }) {
     // shrink into the carousel's hill, then step away
     leaveIntoHill(done) {
       if (!active) { done && done(); return; }
-      animateMorph(1, 0.95, () => { this.hide(); done && done(); });
+      morph = Math.max(morph, scrollMorph);   // already partly (or fully) formed by scrolling
+      animateMorph(1, 0.95 * (1 - morph) + 0.05, () => { this.hide(); done && done(); });
     },
     hide() {
-      active = false; morph = 0; morphAnim = null;
+      active = false; morph = 0; morphAnim = null; scrollMorph = 0;
+      document.documentElement.style.setProperty('--hill', '0');
       const snap = root.classList.contains('is-morph');   // ending a morph: vanish at once, don't fade back on top
       if (snap) root.classList.add('is-snap');
       root.classList.remove('is-on', 'is-morph');
